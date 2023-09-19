@@ -1,0 +1,13 @@
+[package]
+name = "bevy_camera_extras"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "*"}
+glam = "0.24.1"
+bevy_mod_raycast = "0.13.1"
+bevy_component_extras = "0.1.1"
+
+#[lib]
+#crate-type=["dylib"]
