@@ -6,6 +6,7 @@ use bevy::ecs::event::{Events, ManualEventReader};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
+use bevy_component_extras::components::Debug;
 
 pub mod prelude {
     pub use crate::*;
@@ -61,8 +62,8 @@ impl Default for KeyBindings {
 
 /// Used in queries when you want flycams and not other cameras
 /// A marker component used in queries when you want flycams and not other cameras
-#[derive(Component)]
-pub struct FlyCam;
+// #[derive(Component)]
+// pub struct Debug;
 
 /// Grabs/ungrabs mouse cursor
 fn toggle_grab_cursor(window: &mut Window) {
@@ -87,16 +88,6 @@ fn initial_grab_cursor(mut primary_window: Query<&mut Window, With<PrimaryWindow
     }
 }
 
-/// Spawns the `Camera3dBundle` to be controlled
-fn setup_player(mut commands: Commands) {
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..Default::default()
-        },
-        FlyCam,
-    ));
-}
 
 /// Handles keyboard input and movement
 fn player_move(
@@ -105,7 +96,7 @@ fn player_move(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    mut query: Query<(&FlyCam, &mut Transform)>, //    mut query: Query<&mut Transform, With<FlyCam>>,
+    mut query: Query<(&Debug, &mut Transform), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
     if let Ok(window) = primary_window.get_single() {
         for (_camera, mut transform) in query.iter_mut() {
@@ -151,10 +142,12 @@ fn player_look(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
-    mut query: Query<&mut Transform, With<FlyCam>>,
+    mut query: Query<&mut Transform, (With<Camera>, With<Debug>)>,
 ) {
     if let Ok(window) = primary_window.get_single() {
         for mut transform in query.iter_mut() {
+            //println!("making camera follow movement");
+
             for ev in state.reader_motion.iter(&motion) {
                 let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 match window.cursor.grab_mode {
@@ -196,7 +189,7 @@ fn cursor_grab(
 // Grab cursor when an entity with FlyCam is added
 fn initial_grab_on_flycam_spawn(
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
-    query_added: Query<Entity, Added<FlyCam>>,
+    query_added: Query<Entity, (Added<Debug>, With<Camera>)>,
 ) {
     if query_added.is_empty() {
         return;
@@ -209,24 +202,9 @@ fn initial_grab_on_flycam_spawn(
     }
 }
 
-/// Contains everything needed to add first-person fly camera behavior to your game
-pub struct PlayerPlugin;
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<InputState>()
-            .init_resource::<MovementSettings>()
-            .init_resource::<KeyBindings>()
-            .add_systems(Startup, setup_player)
-            .add_systems(Startup, initial_grab_cursor)
-            .add_systems(Update, player_move)
-            .add_systems(Update, player_look)
-            .add_systems(Update, cursor_grab);
-    }
-}
-
-/// Same as [`PlayerPlugin`] but does not spawn a camera
-pub struct NoCameraPlayerPlugin;
-impl Plugin for NoCameraPlayerPlugin {
+/// Adds all things required to manage a fly cam
+pub struct FlyCameraSystems;
+impl Plugin for FlyCameraSystems {
     fn build(&self, app: &mut App) {
         app.init_resource::<InputState>()
             .init_resource::<MovementSettings>()

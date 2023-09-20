@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use super::systems::*;
-use crate::NoCameraPlayerPlugin;
+use crate::FlyCameraSystems;
 
 /// includes all systems required for managing cameras
 pub struct CameraManagerPlugin;
@@ -13,7 +13,7 @@ impl Plugin for CameraManagerPlugin {
     }
 }
 
-/// Spawns a debug fly cam + systems for managing cameras
+/// Sets a debug cam(or spawns one if one doesn't exist) + adds systems for managing cameras
 pub struct DefaultCameraPlugin;
 
 impl Plugin for DefaultCameraPlugin {
@@ -21,10 +21,10 @@ impl Plugin for DefaultCameraPlugin {
         app
         .add_plugins(
             (
-                NoCameraPlayerPlugin, CameraManagerPlugin
+                FlyCameraSystems, CameraManagerPlugin
             )
         )
-        .add_systems(Startup, spawn_debug_cam)
+        .add_systems(PostStartup, set_debug_cam)
         ;
     }
 }
