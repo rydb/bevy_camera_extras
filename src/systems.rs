@@ -86,11 +86,12 @@ pub fn set_debug_cam(
         )
         ;
     } else {
-        let e = camera_query.single();
-        commands.entity(e)
-        .insert(Debug)
-        .insert(Viewer{offset: Vec3::new(5.0, 5.0, 5.0)})
-        ;
+        for e in camera_query.iter() {
+            commands.entity(e)
+            .insert(Debug)
+            .insert(Viewer{offset: Vec3::new(5.0, 5.0, 5.0)})
+            ;
+        }
     }
 
 }
