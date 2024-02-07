@@ -1,6 +1,6 @@
 [package]
 name = "bevy_camera_extras"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 repository = "https://github.com/rydb/bevy_camera_extras"
 readme = "README.md"
@@ -14,4 +14,4 @@ bevy_component_extras = "0.1.5"
 
 [dev-dependencies]
 bevy = { version = "0.12", features = ["dynamic_linking"]}
-bevy-inspector-egui = "0.21"
+bevy-inspector-egui = "0.22.1"
