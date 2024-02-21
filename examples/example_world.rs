@@ -1,15 +1,14 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::prelude::*;
-use bevy_camera_extras::plugins::DefaultCameraPlugin;
-use bevy_component_extras::components::Watched;
+use bevy_camera_extras::{components::Watched, plugins::DefaultCameraPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultCameraPlugin)
-        .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(WorldInspectorPlugin::default())
         .add_systems(Startup, setup)
         .run();
 }
@@ -22,16 +21,16 @@ fn setup(
 ) {
     // plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(Plane3d::new(Vec3::new(0.0, 1.0, 0.0))),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
         ..default()
     });
     // cube
     commands.spawn(
     (
             PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-                material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+                mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
+                material: materials.add(Color::rgb(0.8, 0.7, 0.6)),
                 transform: Transform::from_xyz(0.0, 0.5, 0.0),
                 ..default()
                 

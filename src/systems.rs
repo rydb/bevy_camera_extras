@@ -1,7 +1,15 @@
-use bevy::prelude::*;
-use glam::Vec3;
+use bevy_core_pipeline::core_3d::Camera3dBundle;
+use bevy_ecs::prelude::*;
+use bevy_render::camera::Camera;
+use bevy_transform::components::Transform;
+use bevy_utils::default;
+use crate::Debug;
+//use bevy::prelude::*;
+use glam::{Quat, Vec3};
 use std::f32::consts::PI;
-use bevy_component_extras::components::*;
+
+use crate::{Followed, Viewer, Watched};
+//use bevy_component_extras::components::*;
 /// follow behind entities marked for following
 
 pub fn follow_flagged (
