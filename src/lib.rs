@@ -91,13 +91,13 @@ fn toggle_grab_cursor(window: &mut Window) {
 }
 
 /// Grabs the cursor when game first starts
-fn initial_grab_cursor(mut primary_window: Query<&mut Window, With<PrimaryWindow>>) {
-    if let Ok(mut window) = primary_window.get_single_mut() {
-        toggle_grab_cursor(&mut window);
-    } else {
-        warn!("Primary window not found for `initial_grab_cursor`!");
-    }
-}
+// fn initial_grab_cursor(mut primary_window: Query<&mut Window, With<PrimaryWindow>>) {
+//     if let Ok(mut window) = primary_window.get_single_mut() {
+//         toggle_grab_cursor(&mut window);
+//     } else {
+//         warn!("Primary window not found for `initial_grab_cursor`!");
+//     }
+// }
 
 
 /// Handles keyboard input and movement
@@ -198,20 +198,20 @@ fn cursor_grab(
 }
 
 // Grab cursor when an entity with FlyCam is added
-fn initial_grab_on_flycam_spawn(
-    mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
-    query_added: Query<Entity, (Added<Debug>, With<Camera>)>,
-) {
-    if query_added.is_empty() {
-        return;
-    }
+// fn initial_grab_on_flycam_spawn(
+//     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
+//     query_added: Query<Entity, (Added<Debug>, With<Camera>)>,
+// ) {
+//     if query_added.is_empty() {
+//         return;
+//     }
 
-    if let Ok(window) = &mut primary_window.get_single_mut() {
-        toggle_grab_cursor(window);
-    } else {
-        warn!("Primary window not found for `initial_grab_cursor`!");
-    }
-}
+//     if let Ok(window) = &mut primary_window.get_single_mut() {
+//         toggle_grab_cursor(window);
+//     } else {
+//         warn!("Primary window not found for `initial_grab_cursor`!");
+//     }
+// }
 
 /// Adds all things required to manage a fly cam
 pub struct FlyCameraSystems;
