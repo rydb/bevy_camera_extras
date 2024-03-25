@@ -3,7 +3,6 @@ use bevy_ecs::prelude::*;
 use bevy_render::camera::Camera;
 use bevy_transform::components::Transform;
 use bevy_utils::default;
-use crate::Debug;
 //use bevy::prelude::*;
 use glam::{Quat, Vec3};
 use std::f32::consts::PI;
@@ -72,34 +71,34 @@ pub fn watch_flagged(
     }
 }
 
-/// sets a camera in the world to a debug camera, or if one doesn't exist, spawns one(!!!THIS BREAKS IF THERE IS MORE THEN ONE CAMERA!!!)
-pub fn set_debug_cam(
-    mut commands:Commands,
-    camera_query: Query<Entity, With<Camera>>
-) {
-    //commands.insert_resource(RaycastPluginState::<Selectable>::default().with_debug_cursor());
-    if camera_query.iter().len() <= 0 {
-        commands.spawn(
-            (
-    Camera3dBundle {
-                transform: Transform::from_xyz(5.0, 4.0, 5.0).with_rotation(Quat::from_rotation_y(PI / 2.5)),
-                ..default()
-            },
-            Debug,
-            //RaycastSource::<Selectable>::new(),
-            //SelectionMode::default(),
-            Viewer{offset: Vec3::new(5.0, 5.0, 5.0)},
+// sets a camera in the world to a debug camera, or if one doesn't exist, spawns one(!!!THIS BREAKS IF THERE IS MORE THEN ONE CAMERA!!!)
+// pub fn set_debug_cam(
+//     mut commands:Commands,
+//     camera_query: Query<Entity, With<Camera>>
+// ) {
+//     //commands.insert_resource(RaycastPluginState::<Selectable>::default().with_debug_cursor());
+//     if camera_query.iter().len() <= 0 {
+//         commands.spawn(
+//             (
+//     Camera3dBundle {
+//                 transform: Transform::from_xyz(5.0, 4.0, 5.0).with_rotation(Quat::from_rotation_y(PI / 2.5)),
+//                 ..default()
+//             },
+//             FlyCam,
+//             //RaycastSource::<Selectable>::new(),
+//             //SelectionMode::default(),
+//             Viewer{offset: Vec3::new(5.0, 5.0, 5.0)},
     
-        )
-        )
-        ;
-    } else {
-        for e in camera_query.iter() {
-            commands.entity(e)
-            .insert(Debug)
-            .insert(Viewer{offset: Vec3::new(5.0, 5.0, 5.0)})
-            ;
-        }
-    }
+//         )
+//         )
+//         ;
+//     } else {
+//         for e in camera_query.iter() {
+//             commands.entity(e)
+//             .insert(FlyCam)
+//             .insert(Viewer{offset: Vec3::new(5.0, 5.0, 5.0)})
+//             ;
+//         }
+//     }
 
-}
+// }

@@ -107,7 +107,7 @@ fn player_move(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    mut query: Query<(&Debug, &mut Transform), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
+    mut query: Query<(&FlyCam, &mut Transform), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
     if let Ok(window) = primary_window.get_single() {
         for (_camera, mut transform) in query.iter_mut() {
@@ -153,7 +153,7 @@ fn player_look(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
-    mut query: Query<&mut Transform, (With<Camera>, With<Debug>)>,
+    mut query: Query<&mut Transform, (With<Camera>, With<FlyCam>)>,
 ) {
     if let Ok(window) = primary_window.get_single() {
         for mut transform in query.iter_mut() {
