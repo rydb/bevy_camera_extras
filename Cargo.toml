@@ -19,7 +19,7 @@ bevy_time = "0.13"
 bevy_log = "0.13"
 bevy_app = "0.13"
 bevy_utils = "0.13"
-glam = "0.25"
+glam = "0.27"
 
 
 [dev-dependencies]
