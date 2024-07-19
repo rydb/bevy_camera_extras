@@ -1,11 +1,7 @@
-use bevy_core_pipeline::core_3d::Camera3dBundle;
 use bevy_ecs::prelude::*;
-use bevy_render::camera::Camera;
 use bevy_transform::components::Transform;
-use bevy_utils::default;
 //use bevy::prelude::*;
-use glam::{Quat, Vec3};
-use std::f32::consts::PI;
+use glam::Vec3;
 
 use crate::{Followed, Viewer, Watched};
 //use bevy_component_extras::components::*;

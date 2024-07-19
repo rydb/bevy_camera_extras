@@ -21,8 +21,8 @@ fn setup(
 ) {
     // plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::new(Vec3::new(0.0, 1.0, 0.0))),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
+        mesh: meshes.add(Plane3d::new(Vec3::new(0.0, 1.0, 0.0), Vec2::new(10.0, 10.0))),
+        material: materials.add(Color::srgb(0.3, 0.5, 0.3)),
         ..default()
     });
     // cube
@@ -30,7 +30,7 @@ fn setup(
     (
             PbrBundle {
                 mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
-                material: materials.add(Color::rgb(0.8, 0.7, 0.6)),
+                material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
                 transform: Transform::from_xyz(0.0, 0.5, 0.0),
                 ..default()
                 
