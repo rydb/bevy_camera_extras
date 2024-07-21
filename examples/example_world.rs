@@ -1,13 +1,15 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::prelude::*;
-use bevy_camera_extras::{components::{FlyCam, Viewer, Watched}, plugins::DefaultCameraPlugin};
+use bevy_camera_extras::{components::{AttachedTo, FlyCam, Watched}, plugins::CameraExtrasPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(DefaultCameraPlugin)
+        .add_plugins(CameraExtrasPlugin {
+            cursor_grabbed_by_default: true
+        })
         .add_plugins(WorldInspectorPlugin::default())
         .add_systems(Startup, setup)
         .run();
@@ -25,8 +27,9 @@ fn setup(
         material: materials.add(Color::srgb(0.3, 0.5, 0.3)),
         ..default()
     });
+    
     // cube
-    commands.spawn(
+    let cube = commands.spawn(
     (
             PbrBundle {
                 mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
@@ -38,7 +41,7 @@ fn setup(
             Watched,
         )
 
-);
+    ).id();
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -56,8 +59,9 @@ fn setup(
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     },
+    //Viewer::default(),
     FlyCam,
-    Viewer::default(),
+    AttachedTo(cube)
     )    
 );
 }

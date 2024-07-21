@@ -1,9 +1,10 @@
 use bevy_ecs::prelude::*;
+use bevy_render::camera::Camera;
 use bevy_transform::components::Transform;
 //use bevy::prelude::*;
 use glam::Vec3;
 
-use crate::{Followed, Viewer, Watched};
+use crate::{AttachedTo, Followed, Viewer, Watched};
 //use bevy_component_extras::components::*;
 /// follow behind entities marked for following
 
@@ -33,6 +34,21 @@ pub fn follow_flagged (
         }
     }
 
+}
+
+pub fn move_to_attached(
+    mut attaching_cameras: Query<(&mut Transform, &AttachedTo), With<Camera>>,
+    transforms: Query<&Transform, Without<Camera>>
+) {
+    for (mut cam_trans, target) in attaching_cameras.iter_mut() {
+        
+        //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
+        
+        let Ok(target_trans) = transforms.get(target.0) else {return;};
+
+
+        cam_trans.translation = target_trans.translation
+    }
 }
 
 /// rotates camera to watch entities marked for watching

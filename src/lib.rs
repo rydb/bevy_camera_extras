@@ -17,7 +17,9 @@ use bevy_window::{prelude::*, CursorGrabMode, PrimaryWindow};
 use bevy_time::prelude::*;
 use bevy_transform::prelude::Transform;
 use glam::{EulerRot, Quat, Vec3};
+use plugins::{CursorGrabbed, InitialGrabStateSet};
 use crate::components::*;
+
 
 pub mod prelude {
     pub use crate::*;
@@ -77,16 +79,20 @@ impl Default for KeyBindings {
 // pub struct Debug;
 
 /// Grabs/ungrabs mouse cursor
-fn toggle_grab_cursor(window: &mut Window) {
-    match window.cursor.grab_mode {
-        CursorGrabMode::None => {
-            window.cursor.grab_mode = CursorGrabMode::Confined;
-            window.cursor.visible = false;
-        }
-        _ => {
+fn toggle_grab_cursor(window: &mut Window, mut grabbed: ResMut<CursorGrabbed>) {
+    match grabbed.0 {
+        false => {
             window.cursor.grab_mode = CursorGrabMode::None;
             window.cursor.visible = true;
-        }
+            
+            grabbed.0 = true;
+        },
+        true => {
+            window.cursor.grab_mode = CursorGrabMode::Confined;
+            window.cursor.visible = false;
+            
+            grabbed.0 = false;
+        },
     }
 }
 
@@ -101,7 +107,7 @@ fn toggle_grab_cursor(window: &mut Window) {
 
 
 /// Handles keyboard input and movement
-fn player_move(
+fn camera_move(
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
@@ -148,7 +154,7 @@ fn player_move(
 }
 
 /// Handles looking around if cursor is locked
-fn player_look(
+fn camera_look(
     settings: Res<MovementSettings>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
@@ -184,18 +190,32 @@ fn player_look(
 }
 
 fn cursor_grab(
+    grabbed: ResMut<CursorGrabbed>,
     keys: Res<ButtonInput<KeyCode>>,
     key_bindings: Res<KeyBindings>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
     if let Ok(mut window) = primary_window.get_single_mut() {
         if keys.just_pressed(key_bindings.toggle_grab_cursor) {
-            toggle_grab_cursor(&mut window);
+            toggle_grab_cursor(&mut window, grabbed);
         }
     } else {
         warn!("Primary window not found for `cursor_grab`!");
     }
 }
+
+pub fn set_intial_grab_state(
+    grabbed: ResMut<CursorGrabbed>,
+    mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
+) {
+    if let Ok(mut window) = primary_window.get_single_mut() {
+        println!("setting initial grab state");
+
+        toggle_grab_cursor(&mut window, grabbed);
+    }
+}
+
+
 
 // Grab cursor when an entity with FlyCam is added
 // fn initial_grab_on_flycam_spawn(
@@ -222,8 +242,10 @@ impl Plugin for FlyCameraSystems {
             .init_resource::<KeyBindings>()
             //.add_systems(Startup, initial_grab_cursor)
             //.add_systems(Startup, initial_grab_on_flycam_spawn)
-            .add_systems(Update, player_move)
-            .add_systems(Update, player_look)
+            .add_systems(Update, camera_move)
+            .add_systems(Update, camera_look)
             .add_systems(Update, cursor_grab);
     }
 }
+
+//pub struct CameraGrabbed(bool);
