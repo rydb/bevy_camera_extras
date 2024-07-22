@@ -17,5 +17,7 @@ pub struct AttachedTo(pub Entity);
 #[derive(Component)]
 pub struct Watched;
 
+/// A flag to mark an entity to have camera controllers.
+/// add additional camera control flag components to create the camera kind you want.
 #[derive(Component)]
-pub struct FlyCam;
+pub struct CameraControls;
