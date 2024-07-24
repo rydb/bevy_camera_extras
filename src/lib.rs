@@ -131,13 +131,5 @@ pub mod prelude {
 //     }
 // }
 
-/// Adds all things required to manage a fly cam
-pub struct FlyCameraSystems;
-impl Plugin for FlyCameraSystems {
-    fn build(&self, app: &mut App) {
-        app
-;
-    }
-}
 
 //pub struct CameraGrabbed(bool);

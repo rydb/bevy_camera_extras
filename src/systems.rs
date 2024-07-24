@@ -118,14 +118,24 @@ pub fn camera_move(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
+    restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<(&CameraControls, &mut Transform), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
-    if let Ok(window) = primary_window.get_single() {
+    let window = match primary_window.get_single() {
+        Ok(win) => win,
+        Err(err) => {
+            warn!("Unable to move camera, Reason: {:#}", err);
+            return;
+        }
+    };
+
+    if restraints_toggled.0 == false {
         for (_camera, mut transform) in query.iter_mut() {
             let mut velocity = Vec3::ZERO;
             let local_z = transform.local_z();
             let forward = -Vec3::new(local_z.x, 0., local_z.z);
             let right = Vec3::new(local_z.z, 0., -local_z.x);
+
 
             for key in keys.get_pressed() {
                 match window.cursor.grab_mode {
@@ -134,28 +144,25 @@ pub fn camera_move(
                         let key = *key;
                         if key == key_bindings.move_forward {
                             velocity += forward;
-                        } else if key == key_bindings.move_backward {
+                        } if key == key_bindings.move_backward {
                             velocity -= forward;
-                        } else if key == key_bindings.move_left {
+                        } if key == key_bindings.move_left {
                             velocity -= right;
-                        } else if key == key_bindings.move_right {
+                        } if key == key_bindings.move_right {
                             velocity += right;
-                        } else if key == key_bindings.move_ascend {
+                        } if key == key_bindings.move_ascend {
                             velocity += Vec3::Y;
-                        } else if key == key_bindings.move_descend {
+                        } if key == key_bindings.move_descend {
                             velocity -= Vec3::Y;
                         }
                     }
                 }
-
-                velocity = velocity.normalize_or_zero();
-
-                transform.translation += velocity * time.delta_seconds() * settings.speed
             }
+            velocity = velocity.normalize_or_zero();
+            transform.translation += velocity * time.delta_seconds() * settings.speed
+
         }
-    } else {
-        warn!("Primary window not found for `player_move`!");
-    }
+    } 
 }
 
 /// Handles looking around if cursor is locked
