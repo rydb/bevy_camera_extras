@@ -4,13 +4,12 @@ use std::ops::BitXorAssign;
 use bevy_ecs::prelude::*;
 use bevy_input::ButtonInput;
 use bevy_render::camera::Camera;
+use bevy_transform::commands;
 use bevy_transform::components::Transform;
 use bevy_input::prelude::*;
 use glam::Vec3;
 
-use bevy_app::prelude::*;
-use bevy_input::{mouse::MouseMotion, prelude::*};
-use bevy_ecs::{event::ManualEventReader, prelude::*};
+use bevy_input::mouse::MouseMotion;
 use bevy_log::prelude::*;
 use bevy_window::{prelude::*, CursorGrabMode, PrimaryWindow};
 use bevy_time::prelude::*;
@@ -18,7 +17,7 @@ use glam::{EulerRot, Quat};
 use crate::components::*;
 use crate::resources::*;
 
-use crate::{AttachedTo, Followed, Viewer, Watched};
+use crate::{Followed, Viewer, Watched};
 //use bevy_component_extras::components::*;
 /// follow behind entities marked for following
 
@@ -50,31 +49,74 @@ pub fn follow_flagged (
 
 }
 
-pub fn check_for_restraints_toggle_press(
+pub fn check_for_setting_toggles(
     mut restraints_toggle: ResMut<RestraintsToggled>,
-    camera_controls: Res<KeyBindings>,
+    camera_keybinds: Res<KeyBindings>,
     keys: Res<ButtonInput<KeyCode>>,
+    mut cameras: Query<(Entity, &mut CameraControls)>,
+    mut commands: Commands,
+    cached_offsets: Query<&CameraDistanceOffsetCache>,
 ) {
-    if keys.just_pressed(camera_controls.toggle_restraints) {
+    if keys.just_pressed(camera_keybinds.toggle_restraints) {
         restraints_toggle.0 ^= true;
+    }
+    if keys.just_pressed(camera_keybinds.switch_camera_mode) {
+        for (e, mut camera) in cameras.iter_mut() {
+            camera.camera_mode = match camera.camera_mode {
+                CameraMode::FirstPerson => {
+                    let offset = match cached_offsets.get(e) {
+                        Ok(item) => item.0,
+                        Err(_) => CameraDistanceOffset::default(),
+                    };
+                    CameraMode::ThirdPerson(offset)
+                },
+                CameraMode::ThirdPerson(offset) => {
+                    commands.entity(e).insert(CameraDistanceOffsetCache(offset));
+                    CameraMode::FirstPerson
+                },
+            }
+        }
     }
 }
 
 pub fn move_to_attached(
-    mut attaching_cameras: Query<(&mut Transform, &AttachedTo), With<Camera>>,
+    mut attaching_cameras: Query<(&mut Transform, &CameraControls), With<Camera>>,
     transforms: Query<&Transform, Without<Camera>>,
     //keys: Res<ButtonInput<KeyCode>>,
     restraints_toggle: Res<RestraintsToggled>,
 ) {
     if restraints_toggle.0 == true {
-        for (mut cam_trans, target) in attaching_cameras.iter_mut() {
+        for (mut cam_trans, cam_info) in attaching_cameras.iter_mut() {
         
             //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
-            
-            let Ok(target_trans) = transforms.get(target.0) else {return;};
+            let Ok(target_trans) = transforms.get(cam_info.attach_to) else {return;};
+
+            match cam_info.camera_mode {
+                CameraMode::FirstPerson => {
+                    cam_trans.translation = target_trans.translation
+                },
+                CameraMode::ThirdPerson(offset) => {
+                    let car_position = target_trans.translation;
+                    let car_forward = target_trans.forward();
+        
+                    // Camera should follow the car from above and slightly behind it
+                    // let follow_distance = 15.0;
+                    // let follow_height = 10.0;
+                    let follow_distance = offset.0.x;
+                    let follow_height = offset.0.y;
+        
+                    // Calculate desired camera position behind the car
+                    let mut desired_camera_position = car_position - car_forward * follow_distance;
+                    desired_camera_position.y += follow_height;
+        
+                    // Smoothly move the camera to the desired position
+                    cam_trans.translation = desired_camera_position;
+        
+                    // Make the camera look at the car with a slight downward angle
+                    cam_trans.look_at(car_position, Vec3::Y);
+                },
+            };    
     
-    
-            cam_trans.translation = target_trans.translation
         }
     }
 }
@@ -99,12 +141,7 @@ pub fn watch_flagged(
         }
         for e in viewer_querry.iter() {
             if let Ok(mut trans) = transform_querry.get_mut(e) {
-                //let mut new_trans = *trans;
-                //println!("new trans for ROTATION is: {:#?}", new_trans.translation);
-                // look at the median cordinate between all "watched" entities
                 trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
-                //println!("looking at {:#?}", new_trans.rotation);
-                //commands.entity(e).insert(new_trans);
             }
 
         }
@@ -171,9 +208,19 @@ pub fn camera_look(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
+    restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<&mut Transform, (With<Camera>, With<CameraControls>)>,
 ) {
-    if let Ok(window) = primary_window.get_single() {
+
+    let window = match primary_window.get_single() {
+        Ok(win) => win,
+        Err(err) => {
+            warn!("Unable to rotate camera, Reason: {:#}", err);
+            return;
+        }
+    };
+
+    if restraints_toggled.0 == false {
         for mut transform in query.iter_mut() {
             //println!("making camera follow movement");
 
@@ -196,8 +243,6 @@ pub fn camera_look(
                     Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
             }
         }
-    } else {
-        warn!("Primary window not found for `player_look`!");
     }
 }
 
@@ -245,35 +290,3 @@ pub fn set_intial_grab_state(
         toggle_grab_cursor(&mut window, grabbed);
     }
 }
-
-// sets a camera in the world to a debug camera, or if one doesn't exist, spawns one(!!!THIS BREAKS IF THERE IS MORE THEN ONE CAMERA!!!)
-// pub fn set_debug_cam(
-//     mut commands:Commands,
-//     camera_query: Query<Entity, With<Camera>>
-// ) {
-//     //commands.insert_resource(RaycastPluginState::<Selectable>::default().with_debug_cursor());
-//     if camera_query.iter().len() <= 0 {
-//         commands.spawn(
-//             (
-//     Camera3dBundle {
-//                 transform: Transform::from_xyz(5.0, 4.0, 5.0).with_rotation(Quat::from_rotation_y(PI / 2.5)),
-//                 ..default()
-//             },
-//             FlyCam,
-//             //RaycastSource::<Selectable>::new(),
-//             //SelectionMode::default(),
-//             Viewer{offset: Vec3::new(5.0, 5.0, 5.0)},
-    
-//         )
-//         )
-//         ;
-//     } else {
-//         for e in camera_query.iter() {
-//             commands.entity(e)
-//             .insert(FlyCam)
-//             .insert(Viewer{offset: Vec3::new(5.0, 5.0, 5.0)})
-//             ;
-//         }
-//     }
-
-// }

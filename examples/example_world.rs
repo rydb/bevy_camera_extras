@@ -1,7 +1,7 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::prelude::*;
-use bevy_camera_extras::{components::{AttachedTo, CameraControls, Watched}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::{components::CameraControls, plugins::CameraExtrasPlugin, CameraMode};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
@@ -62,8 +62,11 @@ fn setup(
         ..default()
         },
             //Viewer::default(),
-        CameraControls,
-        AttachedTo(cube)
+        CameraControls {
+            attach_to: cube,
+            camera_mode: CameraMode::FirstPerson,
+        }
+        //AttachedTo(cube)
     )    
 );
 }

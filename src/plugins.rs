@@ -2,7 +2,7 @@ use bevy_app::prelude::*;
 use bevy_ecs::system::Resource;
 use super::systems::*;
 use super::resources::*;
-use crate::{InputState, KeyBindings, MovementSettings};
+//use crate::{InputState, KeyBindings, MovementSettings};
 
 /// Includes everything to follow a set [`FlyCam`]
 pub struct CameraExtrasPlugin {
@@ -44,7 +44,7 @@ impl Plugin for CameraExtrasPlugin {
         .add_systems(Update, camera_move)
         .add_systems(Update, camera_look)
         .add_systems(Update, cursor_grab)
-        .add_systems(Update, check_for_restraints_toggle_press)
+        .add_systems(Update, check_for_setting_toggles)
         ;
     }
 }

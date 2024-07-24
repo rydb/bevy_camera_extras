@@ -1,5 +1,5 @@
 use bevy_ecs::{event::ManualEventReader, prelude::*};
-use bevy_input::{mouse::MouseMotion, prelude::*};
+use bevy_input::{keyboard::Key, mouse::MouseMotion, prelude::*};
 
 /// Key configuration
 #[derive(Resource, Clone, Copy)]
@@ -13,6 +13,7 @@ pub struct KeyBindings {
     pub toggle_grab_cursor: KeyCode,
     /// toggle insertered restraints on camera.
     pub toggle_restraints: KeyCode,
+    pub switch_camera_mode: KeyCode,
 }
 
 impl Default for KeyBindings {
@@ -25,7 +26,8 @@ impl Default for KeyBindings {
             move_ascend: KeyCode::Space,
             move_descend: KeyCode::ShiftLeft,
             toggle_grab_cursor: KeyCode::Escape,
-            toggle_restraints: KeyCode::ControlLeft
+            toggle_restraints: KeyCode::ControlLeft,
+            switch_camera_mode: KeyCode::Tab,
         }
     }
 }
