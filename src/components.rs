@@ -23,14 +23,14 @@ pub struct Viewer {
 #[derive(Component, Clone, Copy, Reflect)]
 pub struct CameraDistanceOffsetCache(pub CameraDistanceOffset);
 
-#[derive(Clone, Copy, Reflect)]
+#[derive(Clone, Copy, Reflect, PartialEq)]
 pub enum CameraMode {
     FirstPerson,
     /// third person. Set distance from target with vec.
     ThirdPerson(CameraDistanceOffset),
 }
 
-#[derive(Clone, Copy, Reflect)]
+#[derive(Clone, Copy, Reflect, PartialEq)]
 pub struct CameraDistanceOffset(pub Vec2);
 
 impl Default for CameraDistanceOffset {
@@ -46,6 +46,11 @@ impl Default for CameraDistanceOffset {
 
 #[derive(Component)]
 pub struct Watched;
+
+// pub enum LookMode {
+//     Fixed,
+//     Free,
+// }
 
 /// A flag to mark an entity to have camera controllers.
 /// add additional camera control flag components to create the camera kind you want.

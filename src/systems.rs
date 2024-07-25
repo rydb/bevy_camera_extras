@@ -202,6 +202,7 @@ pub fn camera_move(
     } 
 }
 
+
 /// Handles looking around if cursor is locked
 pub fn camera_look(
     settings: Res<MovementSettings>,
@@ -209,7 +210,7 @@ pub fn camera_look(
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
     restraints_toggled: Res<RestraintsToggled>,
-    mut query: Query<&mut Transform, (With<Camera>, With<CameraControls>)>,
+    mut query: Query<(&mut Transform, &CameraControls), (With<Camera>)>,
 ) {
 
     let window = match primary_window.get_single() {
@@ -220,30 +221,42 @@ pub fn camera_look(
         }
     };
 
-    if restraints_toggled.0 == false {
-        for mut transform in query.iter_mut() {
-            //println!("making camera follow movement");
-
-            for ev in state.reader_motion.read(&motion) {
-                let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-                match window.cursor.grab_mode {
-                    CursorGrabMode::None => (),
-                    _ => {
-                        // Using smallest of height or width ensures equal vertical and horizontal sensitivity
-                        let window_scale = window.height().min(window.width());
-                        pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
-                        yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
+    //if restraints_toggled.0 == false {
+        for (mut transform, camera_controls) in query.iter_mut() {
+            if restraints_toggled.0 == false || camera_controls.camera_mode == CameraMode::FirstPerson {
+                for ev in state.reader_motion.read(&motion) {
+                    let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+                    match window.cursor.grab_mode {
+                        CursorGrabMode::None => (),
+                        _ => {
+                            // Using smallest of height or width ensures equal vertical and horizontal sensitivity
+                            let window_scale = window.height().min(window.width());
+                            pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
+                            yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
+                        }
                     }
+    
+                    pitch = pitch.clamp(-1.54, 1.54);
+    
+                    transform.rotation =
+                        Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
                 }
-
-                pitch = pitch.clamp(-1.54, 1.54);
-
-                // Order is important to prevent unintended roll
-                transform.rotation =
-                    Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+            } else {
+            match camera_controls.camera_mode {
+                CameraMode::FirstPerson => {
+                    //Freefly look is first person look at the moment, skip
+                    continue;
+                },
+                CameraMode::ThirdPerson(_) => {
+                    //TODO
+                },
             }
+            }
+            
+
+
         }
-    }
+    //}
 }
 
 pub fn cursor_grab(

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_camera_extras"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 repository = "https://github.com/rydb/bevy_camera_extras"
 readme = "README.md"
