@@ -1,7 +1,6 @@
 use bevy_app::prelude::*;
-use bevy_ecs::system::Resource;
-use super::systems::*;
-use super::resources::*;
+
+use super::*;
 //use crate::{InputState, KeyBindings, MovementSettings};
 
 /// Includes everything to follow a set [`FlyCam`]

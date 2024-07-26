@@ -1,4 +1,4 @@
-use std::ops::BitOr;
+use std::*;
 use std::ops::BitXorAssign;
 
 use bevy_ecs::prelude::*;
@@ -17,7 +17,7 @@ use glam::{EulerRot, Quat};
 use crate::components::*;
 use crate::resources::*;
 
-use crate::{Followed, Viewer, Watched};
+use crate::*;
 //use bevy_component_extras::components::*;
 /// follow behind entities marked for following
 

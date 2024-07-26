@@ -1,9 +1,9 @@
-pub mod plugins;
-pub mod components;
-pub mod resources;
+mod plugins;
+mod components;
+mod resources;
 mod systems;
 
-pub use crate::components::*;
-pub use crate::plugins::*;
-pub use crate::systems::*;
-
+pub use components::*;
+pub use plugins::*;
+pub use resources::*;
+use systems::*;
