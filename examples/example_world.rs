@@ -61,12 +61,11 @@ fn setup(
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
         },
-            //Viewer::default(),
-        CameraControls {
-            attach_to: cube,
+        CameraController {
             camera_mode: CameraMode::FirstPerson,
+            restrained: CameraRestrained(true),
+            targeting: CameraTargeting(cube),
         }
-        //AttachedTo(cube)
     )    
 );
 }

@@ -1,7 +1,7 @@
 use bevy_ecs::{event::ManualEventReader, prelude::*};
-use bevy_input::{keyboard::Key, mouse::MouseMotion, prelude::*};
+use bevy_input::{mouse::MouseMotion, prelude::*};
 
-/// Key configuration
+/// Key configuration for camera
 #[derive(Resource, Clone, Copy)]
 pub struct KeyBindings {
     pub move_forward: KeyCode,
@@ -13,6 +13,8 @@ pub struct KeyBindings {
     pub toggle_grab_cursor: KeyCode,
     /// toggle insertered restraints on camera.
     pub toggle_restraints: KeyCode,
+    
+    /// Switched between different camera modes
     pub switch_camera_mode: KeyCode,
 }
 
@@ -32,6 +34,7 @@ impl Default for KeyBindings {
     }
 }
 
+// Weather the window should grab or not grab the cursor. 
 #[derive(Default, Resource)]
 pub struct CursorGrabbed(pub bool);
 
@@ -48,16 +51,6 @@ impl Default for MovementSettings {
             sensitivity: 0.00012,
             speed: 12.,
         }
-    }
-}
-
-#[derive(Resource)]
-/// camera restraints. Enables freefly if this is set to false
-pub struct RestraintsToggled(pub bool);
-
-impl Default for RestraintsToggled {
-    fn default() -> Self {
-        Self(true)
     }
 }
 

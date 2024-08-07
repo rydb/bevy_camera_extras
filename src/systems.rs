@@ -1,10 +1,8 @@
 use std::*;
-use std::ops::BitXorAssign;
 
 use bevy_ecs::prelude::*;
 use bevy_input::ButtonInput;
 use bevy_render::camera::Camera;
-use bevy_transform::commands;
 use bevy_transform::components::Transform;
 use bevy_input::prelude::*;
 use glam::Vec3;
@@ -14,55 +12,59 @@ use bevy_log::prelude::*;
 use bevy_window::{prelude::*, CursorGrabMode, PrimaryWindow};
 use bevy_time::prelude::*;
 use glam::{EulerRot, Quat};
-use crate::components::*;
-use crate::resources::*;
 
 use crate::*;
-//use bevy_component_extras::components::*;
-/// follow behind entities marked for following
 
-pub fn follow_flagged (
-    //mut commands: Commands,
-    to_watch_querry: Query<Entity, With<Followed>>,
-    viewer_querry: Query<(Entity, &Viewer)>,
-    mut transform_querry: Query<&mut Transform>,
-) {
-    let mut cord_total = Vec3::new(0.0,0.0,0.0);
+// /// follow behind entities marked for following
+// pub fn follow_flagged (
+//     //mut commands: Commands,
+//     to_watch_querry: Query<Entity, With<Followed>>,
+//     viewer_querry: Query<(Entity, &Viewer)>,
+//     mut transform_querry: Query<&mut Transform>,
+// ) {
+//     let mut cord_total = Vec3::new(0.0,0.0,0.0);
 
-    if to_watch_querry.iter().len() > 0 {
-        for e in to_watch_querry.iter() {
-            if let Ok(trans) = transform_querry.get(e) {
-                cord_total += trans.translation;
-            }
-        }
-        for (e, viewer) in viewer_querry.iter() {
-            if let Ok(mut trans) = transform_querry.get_mut(e) {
-                //println!("following {:#?}", e);
-                //println!("new trans for FOLLOW is {:#}", new_trans.translation);
-                trans.translation = cord_total + viewer.offset;
-                //println!("following all followed entities at: {:#?}", new_trans.translation);
-                //commands.entity(e).insert(new_trans);
-            }
+//     if to_watch_querry.iter().len() > 0 {
+//         for e in to_watch_querry.iter() {
+//             if let Ok(trans) = transform_querry.get(e) {
+//                 cord_total += trans.translation;
+//             }
+//         }
+//         for (e, viewer) in viewer_querry.iter() {
+//             if let Ok(mut trans) = transform_querry.get_mut(e) {
+//                 //println!("following {:#?}", e);
+//                 //println!("new trans for FOLLOW is {:#}", new_trans.translation);
+//                 trans.translation = cord_total + viewer.offset;
+//                 //println!("following all followed entities at: {:#?}", new_trans.translation);
+//                 //commands.entity(e).insert(new_trans);
+//             }
     
-        }
-    }
+//         }
+//     }
 
-}
+// }
 
 pub fn check_for_setting_toggles(
-    mut restraints_toggle: ResMut<RestraintsToggled>,
+    //mut restraints_toggle: ResMut<RestraintsToggled>,
+    //cameras: Query<(Entity, Option<&RestraintsToggled>), With<CameraControls>>,
     camera_keybinds: Res<KeyBindings>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut cameras: Query<(Entity, &mut CameraControls)>,
+    mut cameras: Query<(Entity, &mut CameraMode, Option<&mut CameraRestrained>)>,
     mut commands: Commands,
     cached_offsets: Query<&CameraDistanceOffsetCache>,
 ) {
     if keys.just_pressed(camera_keybinds.toggle_restraints) {
-        restraints_toggle.0 ^= true;
+        for (_, _, restraints_check) in cameras.iter_mut() {
+            if let Some(mut toggle) = restraints_check {
+            
+                toggle.0 ^= true;
+            }
+        }
+        //restraints_toggle.0 ^= true;
     }
     if keys.just_pressed(camera_keybinds.switch_camera_mode) {
-        for (e, mut camera) in cameras.iter_mut() {
-            camera.camera_mode = match camera.camera_mode {
+        for (e, mut camera_mode, _) in cameras.iter_mut() {
+            *camera_mode = match *camera_mode {
                 CameraMode::FirstPerson => {
                     let offset = match cached_offsets.get(e) {
                         Ok(item) => item.0,
@@ -80,18 +82,24 @@ pub fn check_for_setting_toggles(
 }
 
 pub fn move_to_attached(
-    mut attaching_cameras: Query<(&mut Transform, &CameraControls), With<Camera>>,
+    mut attaching_cameras: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>, &CameraTargeting), With<Camera>>,
     transforms: Query<&Transform, Without<Camera>>,
     //keys: Res<ButtonInput<KeyCode>>,
-    restraints_toggle: Res<RestraintsToggled>,
+    //restraints_toggle: Res<RestraintsToggled>,
 ) {
-    if restraints_toggle.0 == true {
-        for (mut cam_trans, cam_info) in attaching_cameras.iter_mut() {
-        
-            //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
-            let Ok(target_trans) = transforms.get(cam_info.attach_to) else {return;};
+    //if restraints_toggle.0 == true {
+    for (mut cam_trans, cam_info, restrained, targeting) in attaching_cameras.iter_mut() {
+    
+        //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
+        //let Some(attach_target) = targeting.target else {return;};
+        let restraints_toggled = match restrained {
+            Some(toggle) => toggle.0,
+            None => false,
+        };
+        if restraints_toggled == true {
+            let Ok(target_trans) = transforms.get(targeting.0) else {return;};
 
-            match cam_info.camera_mode {
+            match cam_info{
                 CameraMode::FirstPerson => {
                     cam_trans.translation = target_trans.translation
                 },
@@ -116,37 +124,39 @@ pub fn move_to_attached(
                     cam_trans.look_at(car_position, Vec3::Y);
                 },
             };    
-    
         }
+
+
     }
+    //}
 }
 
 /// rotates camera to watch entities marked for watching
-pub fn watch_flagged(
-    //mut commands: Commands,
-    to_watch_querry: Query<Entity, With<Watched>>,
-    viewer_querry: Query<Entity, With<Viewer>>,
-    mut transform_querry: Query<&mut Transform>,
+// pub fn watch_flagged(
+//     //mut commands: Commands,
+//     to_watch_querry: Query<Entity, With<Watched>>,
+//     viewer_querry: Query<Entity, With<Viewer>>,
+//     mut transform_querry: Query<&mut Transform>,
 
-) {
-    if to_watch_querry.iter().len() > 0 {
-        let mut point_count = 0.0;
-        let mut cord_total = Vec3::new(0.0,0.0,0.0);
+// ) {
+//     if to_watch_querry.iter().len() > 0 {
+//         let mut point_count = 0.0;
+//         let mut cord_total = Vec3::new(0.0,0.0,0.0);
 
-        for e in to_watch_querry.iter() {
-            if let Ok(trans) = transform_querry.get(e) {
-                point_count += 1.0;
-                cord_total += trans.translation;
-            }
-        }
-        for e in viewer_querry.iter() {
-            if let Ok(mut trans) = transform_querry.get_mut(e) {
-                trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
-            }
+//         for e in to_watch_querry.iter() {
+//             if let Ok(trans) = transform_querry.get(e) {
+//                 point_count += 1.0;
+//                 cord_total += trans.translation;
+//             }
+//         }
+//         for e in viewer_querry.iter() {
+//             if let Ok(mut trans) = transform_querry.get_mut(e) {
+//                 trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
+//             }
 
-        }
-    }
-}
+//         }
+//     }
+// }
 
 /// Handles keyboard input and movement
 pub fn camera_move(
@@ -155,8 +165,8 @@ pub fn camera_move(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    restraints_toggled: Res<RestraintsToggled>,
-    mut query: Query<(&CameraControls, &mut Transform), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
+    //restraints_toggled: Res<RestraintsToggled>,
+    mut query: Query<(&CameraMode, &mut Transform, Option<&CameraRestrained>), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
     let window = match primary_window.get_single() {
         Ok(win) => win,
@@ -166,14 +176,18 @@ pub fn camera_move(
         }
     };
 
-    if restraints_toggled.0 == false {
-        for (_camera, mut transform) in query.iter_mut() {
+    for (_camera, mut transform, target_config) in query.iter_mut() {
+        let restraints_toggled = match target_config {
+            Some(toggle) => toggle.0,
+            None => false,
+        };
+        if restraints_toggled == false{
             let mut velocity = Vec3::ZERO;
             let local_z = transform.local_z();
             let forward = -Vec3::new(local_z.x, 0., local_z.z);
             let right = Vec3::new(local_z.z, 0., -local_z.x);
-
-
+    
+    
             for key in keys.get_pressed() {
                 match window.cursor.grab_mode {
                     CursorGrabMode::None => (),
@@ -197,9 +211,10 @@ pub fn camera_move(
             }
             velocity = velocity.normalize_or_zero();
             transform.translation += velocity * time.delta_seconds() * settings.speed
-
+    
         }
-    } 
+
+    }
 }
 
 
@@ -209,8 +224,8 @@ pub fn camera_look(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
-    restraints_toggled: Res<RestraintsToggled>,
-    mut query: Query<(&mut Transform, &CameraControls), (With<Camera>)>,
+    //restraints_toggled: Res<RestraintsToggled>,
+    mut query: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
 ) {
 
     let window = match primary_window.get_single() {
@@ -221,41 +236,47 @@ pub fn camera_look(
         }
     };
 
+
     //if restraints_toggled.0 == false {
-        for (mut transform, camera_controls) in query.iter_mut() {
-            if restraints_toggled.0 == false || camera_controls.camera_mode == CameraMode::FirstPerson {
-                for ev in state.reader_motion.read(&motion) {
-                    let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-                    match window.cursor.grab_mode {
-                        CursorGrabMode::None => (),
-                        _ => {
-                            // Using smallest of height or width ensures equal vertical and horizontal sensitivity
-                            let window_scale = window.height().min(window.width());
-                            pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
-                            yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
-                        }
+    for (mut transform, camera_controls, restraints) in query.iter_mut() {
+        let restraints_toggled = match restraints {
+            Some(toggle) => toggle.0,
+            None => false,
+        };
+        
+        if restraints_toggled == false || camera_controls == &CameraMode::FirstPerson {
+            for ev in state.reader_motion.read(&motion) {
+                let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+                match window.cursor.grab_mode {
+                    CursorGrabMode::None => (),
+                    _ => {
+                        // Using smallest of height or width ensures equal vertical and horizontal sensitivity
+                        let window_scale = window.height().min(window.width());
+                        pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
+                        yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
                     }
-    
-                    pitch = pitch.clamp(-1.54, 1.54);
-    
-                    transform.rotation =
-                        Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
                 }
-            } else {
-            match camera_controls.camera_mode {
-                CameraMode::FirstPerson => {
-                    //Freefly look is first person look at the moment, skip
-                    continue;
-                },
-                CameraMode::ThirdPerson(_) => {
-                    //TODO
-                },
-            }
-            }
-            
 
+                pitch = pitch.clamp(-1.54, 1.54);
 
+                transform.rotation =
+                    Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+            }
+        } else {
+        match camera_controls {
+            CameraMode::FirstPerson => {
+                //Freefly look is first person look at the moment, skip
+                continue;
+            },
+            CameraMode::ThirdPerson(_) => {
+                //TODO
+            },
         }
+        }
+        
+
+
+    }
     //}
 }
 
