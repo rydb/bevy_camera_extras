@@ -1,4 +1,4 @@
-//! A simple 3D scene with light shining over a cube sitting on a plane.
+//! A demo to show/test the different capabilities of the camera
 
 use bevy::prelude::*;
 use bevy_camera_extras::*;
@@ -40,7 +40,7 @@ fn setup(
                 ..default()
                 
             },
-            //Watched,
+            Name::new("player")
         )
 
     ).id();
@@ -62,9 +62,13 @@ fn setup(
         ..default()
         },
         CameraController {
-            camera_mode: CameraMode::FirstPerson,
+            camera_mode: CameraMode::POV(POVCam {
+                target: cube,
+                pov: POV::FirstPerson,
+                settings: POVCamSettings::default()
+            }),
             restrained: CameraRestrained(true),
-            targeting: CameraTargeting(cube),
+            //targeting: CameraTargeting(Some(cube)),
         }
     )    
 );

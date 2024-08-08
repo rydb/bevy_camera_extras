@@ -21,5 +21,5 @@ pub struct CameraControllerFree {
 pub struct CameraController {
     pub restrained: CameraRestrained,
     pub camera_mode: CameraMode,
-    pub targeting: CameraTargeting,
+    //pub targeting: CameraTargeting,
 }

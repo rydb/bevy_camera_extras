@@ -14,8 +14,11 @@ pub struct KeyBindings {
     /// toggle insertered restraints on camera.
     pub toggle_restraints: KeyCode,
     
-    /// Switched between different camera modes
+    /// Switch between different modes of current camera kind.
     pub switch_camera_mode: KeyCode,
+
+    /// Switch between different camera kinds(observer, POV, etc..)
+    pub switch_camera_kind: KeyCode,
 }
 
 impl Default for KeyBindings {
@@ -30,6 +33,7 @@ impl Default for KeyBindings {
             toggle_grab_cursor: KeyCode::Escape,
             toggle_restraints: KeyCode::ControlLeft,
             switch_camera_mode: KeyCode::Tab,
+            switch_camera_kind: KeyCode::Backquote
         }
     }
 }

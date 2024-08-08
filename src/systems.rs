@@ -15,35 +15,6 @@ use glam::{EulerRot, Quat};
 
 use crate::*;
 
-// /// follow behind entities marked for following
-// pub fn follow_flagged (
-//     //mut commands: Commands,
-//     to_watch_querry: Query<Entity, With<Followed>>,
-//     viewer_querry: Query<(Entity, &Viewer)>,
-//     mut transform_querry: Query<&mut Transform>,
-// ) {
-//     let mut cord_total = Vec3::new(0.0,0.0,0.0);
-
-//     if to_watch_querry.iter().len() > 0 {
-//         for e in to_watch_querry.iter() {
-//             if let Ok(trans) = transform_querry.get(e) {
-//                 cord_total += trans.translation;
-//             }
-//         }
-//         for (e, viewer) in viewer_querry.iter() {
-//             if let Ok(mut trans) = transform_querry.get_mut(e) {
-//                 //println!("following {:#?}", e);
-//                 //println!("new trans for FOLLOW is {:#}", new_trans.translation);
-//                 trans.translation = cord_total + viewer.offset;
-//                 //println!("following all followed entities at: {:#?}", new_trans.translation);
-//                 //commands.entity(e).insert(new_trans);
-//             }
-    
-//         }
-//     }
-
-// }
-
 pub fn check_for_setting_toggles(
     //mut restraints_toggle: ResMut<RestraintsToggled>,
     //cameras: Query<(Entity, Option<&RestraintsToggled>), With<CameraControls>>,
@@ -51,7 +22,7 @@ pub fn check_for_setting_toggles(
     keys: Res<ButtonInput<KeyCode>>,
     mut cameras: Query<(Entity, &mut CameraMode, Option<&mut CameraRestrained>)>,
     mut commands: Commands,
-    cached_offsets: Query<&CameraDistanceOffsetCache>,
+    pov_cam_settings: Query<&POVCamCache>,
 ) {
     if keys.just_pressed(camera_keybinds.toggle_restraints) {
         for (_, _, restraints_check) in cameras.iter_mut() {
@@ -64,31 +35,60 @@ pub fn check_for_setting_toggles(
     }
     if keys.just_pressed(camera_keybinds.switch_camera_mode) {
         for (e, mut camera_mode, _) in cameras.iter_mut() {
+            
             *camera_mode = match *camera_mode {
-                CameraMode::FirstPerson => {
-                    let offset = match cached_offsets.get(e) {
-                        Ok(item) => item.0,
-                        Err(_) => CameraDistanceOffset::default(),
+                CameraMode::POV(cam) => {
+                    let settings = match pov_cam_settings.get(e) {
+                        Ok(item) => item.0.settings,
+                        Err(_) => POVCamSettings::default(),
                     };
-                    CameraMode::ThirdPerson(offset)
+                    let pov = match cam.pov {
+                        POV::FirstPerson => POV::ThirdPerson,
+                        POV::ThirdPerson => POV::FirstPerson,
+                    };
+                    CameraMode::POV(POVCam {
+                        target: cam.target,
+                        pov: pov,
+                        settings: settings
+                    })
                 },
-                CameraMode::ThirdPerson(offset) => {
-                    commands.entity(e).insert(CameraDistanceOffsetCache(offset));
-                    CameraMode::FirstPerson
+                CameraMode::Observer => *camera_mode
+            }
+        }
+    }
+    if keys.just_pressed(camera_keybinds.switch_camera_kind) {
+        for (e, mut camera_mode, _) in cameras.iter_mut() {
+            *camera_mode = match *camera_mode {
+                CameraMode::POV(cam) => 
+                {
+                    commands.entity(e).insert(POVCamCache(cam));
+                    CameraMode::Observer
+                }
+                CameraMode::Observer => {
+                    let cam = match pov_cam_settings.get(e) {
+                        Ok(item) => item.0,
+                        Err(_) => {
+                            warn!("switching to camera without previously set POV cam settings not implemented, ignoring this attempt");
+                            return
+                        },
+                    };
+                    CameraMode::POV(cam)
                 },
             }
         }
     }
 }
 
-pub fn move_to_attached(
-    mut attaching_cameras: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>, &CameraTargeting), With<Camera>>,
+pub fn move_camera_based_on_mode(
+    to_watch_querry: Query<Entity, With<ObservedFrom>>,
+    mut cameras: Query<(Entity, &mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
     transforms: Query<&Transform, Without<Camera>>,
+    pov_cam_settings: Query<&POVCamCache>,
     //keys: Res<ButtonInput<KeyCode>>,
     //restraints_toggle: Res<RestraintsToggled>,
 ) {
     //if restraints_toggle.0 == true {
-    for (mut cam_trans, cam_info, restrained, targeting) in attaching_cameras.iter_mut() {
+    for (cam_entity, mut cam_trans, cam_info, restrained) in cameras.iter_mut() {
     
         //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
         //let Some(attach_target) = targeting.target else {return;};
@@ -97,32 +97,61 @@ pub fn move_to_attached(
             None => false,
         };
         if restraints_toggled == true {
-            let Ok(target_trans) = transforms.get(targeting.0) else {return;};
-
             match cam_info{
-                CameraMode::FirstPerson => {
-                    cam_trans.translation = target_trans.translation
+                CameraMode::POV(cam) => {
+                    let settings = match pov_cam_settings.get(cam_entity) {
+                        Ok(item) => item.0.settings,
+                        Err(_) => POVCamSettings::default(),
+                    };
+                    match cam.pov {
+                        POV::FirstPerson => {
+                            //let Some(target) = targeting.0 else {return};
+                            let Ok(target_trans) = transforms.get(cam.target) else {return;};
+
+                            cam_trans.translation = target_trans.translation
+                        },
+                        POV::ThirdPerson => {
+                            
+                            let Ok(target_trans) = transforms.get(cam.target.clone()) else {return;};
+
+                            let car_position = target_trans.translation;
+                            let car_forward = target_trans.forward();
+                
+                            // Camera should follow the car from above and slightly behind it
+                            // let follow_distance = 15.0;
+                            // let follow_height = 10.0;
+                            let follow_distance = settings.camera_distance_offset.x;
+                            let follow_height = settings.camera_distance_offset.y;
+                
+                            // Calculate desired camera position behind the car
+                            let mut desired_camera_position = car_position - car_forward * follow_distance;
+                            desired_camera_position.y += follow_height;
+                
+                            // Smoothly move the camera to the desired position
+                            cam_trans.translation = desired_camera_position;
+                
+                            // Make the camera look at the car with a slight downward angle
+                            cam_trans.look_at(car_position, Vec3::Y);
+                        },
+                    }
                 },
-                CameraMode::ThirdPerson(offset) => {
-                    let car_position = target_trans.translation;
-                    let car_forward = target_trans.forward();
-        
-                    // Camera should follow the car from above and slightly behind it
-                    // let follow_distance = 15.0;
-                    // let follow_height = 10.0;
-                    let follow_distance = offset.0.x;
-                    let follow_height = offset.0.y;
-        
-                    // Calculate desired camera position behind the car
-                    let mut desired_camera_position = car_position - car_forward * follow_distance;
-                    desired_camera_position.y += follow_height;
-        
-                    // Smoothly move the camera to the desired position
-                    cam_trans.translation = desired_camera_position;
-        
-                    // Make the camera look at the car with a slight downward angle
-                    cam_trans.look_at(car_position, Vec3::Y);
-                },
+                CameraMode::Observer => {
+                    if to_watch_querry.iter().len() > 0 {
+                        let mut point_count = 0.0;
+                        let mut cord_total = Vec3::new(0.0,0.0,0.0);
+                
+                        for e in to_watch_querry.iter() {
+                            if let Ok(trans) = transforms.get(e) {
+                                point_count += 1.0;
+                                cord_total += trans.translation;
+                            }
+                        }
+                        cam_trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
+                
+                    }
+                }     
+
+
             };    
         }
 
@@ -130,33 +159,6 @@ pub fn move_to_attached(
     }
     //}
 }
-
-/// rotates camera to watch entities marked for watching
-// pub fn watch_flagged(
-//     //mut commands: Commands,
-//     to_watch_querry: Query<Entity, With<Watched>>,
-//     viewer_querry: Query<Entity, With<Viewer>>,
-//     mut transform_querry: Query<&mut Transform>,
-
-// ) {
-//     if to_watch_querry.iter().len() > 0 {
-//         let mut point_count = 0.0;
-//         let mut cord_total = Vec3::new(0.0,0.0,0.0);
-
-//         for e in to_watch_querry.iter() {
-//             if let Ok(trans) = transform_querry.get(e) {
-//                 point_count += 1.0;
-//                 cord_total += trans.translation;
-//             }
-//         }
-//         for e in viewer_querry.iter() {
-//             if let Ok(mut trans) = transform_querry.get_mut(e) {
-//                 trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
-//             }
-
-//         }
-//     }
-// }
 
 /// Handles keyboard input and movement
 pub fn camera_move(
@@ -243,8 +245,16 @@ pub fn camera_look(
             Some(toggle) => toggle.0,
             None => false,
         };
+        let first_person_look = match camera_controls {
+            CameraMode::POV(cam) => match cam.pov {
+                POV::FirstPerson => true,
+                POV::ThirdPerson => false
+
+            },
+            CameraMode::Observer => false
+        };
         
-        if restraints_toggled == false || camera_controls == &CameraMode::FirstPerson {
+        if restraints_toggled == false || first_person_look {
             for ev in state.reader_motion.read(&motion) {
                 let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 match window.cursor.grab_mode {
@@ -262,22 +272,8 @@ pub fn camera_look(
                 transform.rotation =
                     Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
             }
-        } else {
-        match camera_controls {
-            CameraMode::FirstPerson => {
-                //Freefly look is first person look at the moment, skip
-                continue;
-            },
-            CameraMode::ThirdPerson(_) => {
-                //TODO
-            },
-        }
-        }
-        
-
-
+        } 
     }
-    //}
 }
 
 pub fn cursor_grab(

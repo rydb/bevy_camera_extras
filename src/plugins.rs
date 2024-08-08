@@ -26,6 +26,11 @@ impl Plugin for CameraExtrasPlugin {
     fn build(&self, app: &mut App) {
         
         app
+        .register_type::<CameraRestrained>()
+        .register_type::<CameraMode>()
+        .register_type::<POVCamCache>()
+        //.register_type::<CameraTargeting>()
+
         .init_resource::<InputState>()
         //.init_resource::<RestraintsToggled>()
         .insert_resource(CursorGrabbed(self.cursor_grabbed_by_default))
@@ -38,7 +43,7 @@ impl Plugin for CameraExtrasPlugin {
         //     watch_flagged, 
         //     move_to_attached
         // ))
-        .add_systems(Update, move_to_attached)
+        .add_systems(Update, move_camera_based_on_mode)
         .add_systems(Update, camera_move)
         .add_systems(Update, camera_look)
         .add_systems(Update, cursor_grab)
