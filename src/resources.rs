@@ -1,5 +1,6 @@
 use bevy_ecs::{event::ManualEventReader, prelude::*};
 use bevy_input::{mouse::MouseMotion, prelude::*};
+use glam::Vec3;
 
 /// Key configuration for camera
 #[derive(Resource, Clone, Copy)]
@@ -19,6 +20,15 @@ pub struct KeyBindings {
 
     /// Switch between different camera kinds(observer, POV, etc..)
     pub switch_camera_kind: KeyCode,
+
+    /// Button used to orbit the camera.
+    /// Defaults to `Button::Left`.
+    pub orbit_drag_button: MouseButton,
+
+    /// Key that must be pressed for `button_orbit` to work.
+    /// Defaults to `None` (no modifier).
+    pub modifier_orbit: Option<KeyCode>,
+
 }
 
 impl Default for KeyBindings {
@@ -33,7 +43,11 @@ impl Default for KeyBindings {
             toggle_grab_cursor: KeyCode::Escape,
             toggle_restraints: KeyCode::ControlLeft,
             switch_camera_mode: KeyCode::Tab,
-            switch_camera_kind: KeyCode::Backquote
+            switch_camera_kind: KeyCode::Backquote,
+            orbit_drag_button: MouseButton::Left,
+            modifier_orbit: None,
+
+
         }
     }
 }

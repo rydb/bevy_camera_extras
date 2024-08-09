@@ -5,7 +5,7 @@ use bevy_input::ButtonInput;
 use bevy_render::camera::Camera;
 use bevy_transform::components::Transform;
 use bevy_input::prelude::*;
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 
 use bevy_input::mouse::MouseMotion;
 use bevy_log::prelude::*;
@@ -44,7 +44,8 @@ pub fn check_for_setting_toggles(
                     };
                     let pov = match cam.pov {
                         POV::FirstPerson => POV::ThirdPerson,
-                        POV::ThirdPerson => POV::FirstPerson,
+                        POV::ThirdPerson => POV::Orbit,
+                        POV::Orbit => POV::FirstPerson,
                     };
                     CameraMode::POV(POVCam {
                         target: cam.target,
@@ -81,14 +82,14 @@ pub fn check_for_setting_toggles(
 
 pub fn move_camera_based_on_mode(
     to_watch_querry: Query<Entity, With<ObservedFrom>>,
-    mut cameras: Query<(Entity, &mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
+    mut cameras: Query<(Entity, &mut Transform, &mut Projection, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
     transforms: Query<&Transform, Without<Camera>>,
     pov_cam_settings: Query<&POVCamCache>,
     //keys: Res<ButtonInput<KeyCode>>,
     //restraints_toggle: Res<RestraintsToggled>,
 ) {
     //if restraints_toggle.0 == true {
-    for (cam_entity, mut cam_trans, cam_info, restrained) in cameras.iter_mut() {
+    for (cam_entity, mut cam_trans, mut projection, cam_info, restrained) in cameras.iter_mut() {
     
         //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
         //let Some(attach_target) = targeting.target else {return;};
@@ -103,17 +104,15 @@ pub fn move_camera_based_on_mode(
                         Ok(item) => item.0.settings,
                         Err(_) => POVCamSettings::default(),
                     };
+                    let Ok(target_trans) = transforms.get(cam.target) else {return;};
+
                     match cam.pov {
                         POV::FirstPerson => {
                             //let Some(target) = targeting.0 else {return};
-                            let Ok(target_trans) = transforms.get(cam.target) else {return;};
-
                             cam_trans.translation = target_trans.translation
                         },
                         POV::ThirdPerson => {
                             
-                            let Ok(target_trans) = transforms.get(cam.target.clone()) else {return;};
-
                             let car_position = target_trans.translation;
                             let car_forward = target_trans.forward();
                 
@@ -133,22 +132,228 @@ pub fn move_camera_based_on_mode(
                             // Make the camera look at the car with a slight downward angle
                             cam_trans.look_at(car_position, Vec3::Y);
                         },
+                        // POV::Orbit => {
+                        //     if !settings.initialized {
+                        //         // Calculate yaw, pitch, and radius from the camera's position. If user sets all
+                        //         // these explicitly, this calculation is wasted, but that's okay since it will only run
+                        //         // once on init.
+                        //         let (yaw, pitch, radius) =
+                        //             calculate_from_translation_and_focus(cam_trans.translation, target_trans.translation);
+                        //         let &mut mut yaw = settings.yaw.get_or_insert(yaw);
+                        //         let &mut mut pitch = settings.pitch.get_or_insert(pitch);
+                        //         let &mut mut radius = settings.radius.get_or_insert(radius);
+
+                        //         // Set initial values
+                        //         settings.yaw = Some(yaw);
+                        //         settings.pitch = Some(pitch);
+                        //         settings.radius = Some(radius);
+                        //         settings.target_yaw = yaw;
+                        //         settings.target_pitch = pitch;
+                        //         settings.target_radius = radius;
+                        //         settings.target_focus = target_trans.translation;
+
+                        //         update_orbit_transform(
+                        //             yaw,
+                        //             pitch,
+                        //             radius,
+                        //             target_trans.translation,
+                        //             &mut cam_trans,
+                        //             &mut projection,
+                        //         );
+
+                        //         //settings.initialized = true;
+                        //     }
+
+                        //     // 1 - Get Input
+
+                        //     let mut orbit = Vec2::ZERO;
+                        //     let mut pan = Vec2::ZERO;
+                        //     let mut scroll_line = 0.0;
+                        //     let mut scroll_pixel = 0.0;
+                        //     let mut orbit_button_changed = false;
+
+                        //     let mut should_get_input = true;
+
+                        //     // The reason we only skip getting input if the camera is inactive/disabled is because
+                        //     // it might still be moving (lerping towards target values) when the user is not
+                        //     // actively controlling it.
+                        //     if should_get_input {
+                        //         let zoom_direction = match settings.reversed_zoom {
+                        //             true => -1.0,
+                        //             false => 1.0,
+                        //         };
+
+                        //         orbit = mouse_key_tracker.orbit * settings.orbit_sensitivity;
+                        //         pan = mouse_key_tracker.pan * settings.pan_sensitivity;
+                        //         scroll_line =
+                        //             mouse_key_tracker.scroll_line * zoom_direction * settings.zoom_sensitivity;
+                        //         scroll_pixel =
+                        //             mouse_key_tracker.scroll_pixel * zoom_direction * settings.zoom_sensitivity;
+                        //         orbit_button_changed = mouse_key_tracker.orbit_button_changed;
+                        //     }
+
+                        //     // 2 - Process input into target yaw/pitch, or focus, radius
+
+                        //     if orbit_button_changed {
+                        //         // Only check for upside down when orbiting started or ended this frame,
+                        //         // so we don't reverse the yaw direction while the user is still dragging
+                        //         let wrapped_pitch = (settings.target_pitch % TAU).abs();
+                        //         settings.is_upside_down = wrapped_pitch > TAU / 4.0 && wrapped_pitch < 3.0 * TAU / 4.0;
+                        //     }
+
+                        //     let mut has_moved = false;
+                        //     if orbit.length_squared() > 0.0 {
+                        //         // Use window size for rotation otherwise the sensitivity
+                        //         // is far too high for small viewports
+                        //         if let Some(win_size) = active_cam.window_size {
+                        //             let delta_x = {
+                        //                 let delta = orbit.x / win_size.x * PI * 2.0;
+                        //                 if settings.is_upside_down {
+                        //                     -delta
+                        //                 } else {
+                        //                     delta
+                        //                 }
+                        //             };
+                        //             let delta_y = orbit.y / win_size.y * PI;
+                        //             settings.target_yaw -= delta_x;
+                        //             settings.target_pitch += delta_y;
+
+                        //             has_moved = true;
+                        //         }
+                        //     }
+                        //     if pan.length_squared() > 0.0 {
+                        //         // Make panning distance independent of resolution and FOV,
+                        //         if let Some(vp_size) = active_cam.viewport_size {
+                        //             let mut multiplier = 1.0;
+                        //             match *projection {
+                        //                 Projection::Perspective(ref p) => {
+                        //                     pan *= Vec2::new(p.fov * p.aspect_ratio, p.fov) / vp_size;
+                        //                     // Make panning proportional to distance away from focus point
+                        //                     if let Some(radius) = settings.radius {
+                        //                         multiplier = radius;
+                        //                     }
+                        //                 }
+                        //                 Projection::Orthographic(ref p) => {
+                        //                     pan *= Vec2::new(p.area.width(), p.area.height()) / vp_size;
+                        //                 }
+                        //             }
+                        //             // Translate by local axes
+                        //             let right = transform.rotation * Vec3::X * -pan.x;
+                        //             let up = transform.rotation * Vec3::Y * pan.y;
+                        //             let translation = (right + up) * multiplier;
+                        //             settings.target_focus += translation;
+                        //             has_moved = true;
+                        //         }
+                        //     }
+                        //     if (scroll_line + scroll_pixel).abs() > 0.0 {
+                        //         // Calculate the impact of scrolling on the reference value
+                        //         let line_delta = -scroll_line * (settings.target_radius) * 0.2;
+                        //         let pixel_delta = -scroll_pixel * (settings.target_radius) * 0.2;
+
+                        //         // Update the target value
+                        //         settings.target_radius += line_delta + pixel_delta;
+
+                        //         // If it is pixel-based scrolling, add it directly to the current value
+                        //         settings.radius = settings
+                        //             .radius
+                        //             .map(|value| apply_zoom_limits(value + pixel_delta));
+
+                        //         has_moved = true;
+                        //     }
+
+                        //     // 3 - Apply constraints
+
+                        //     settings.target_yaw = apply_yaw_limits(settings.target_yaw);
+                        //     settings.target_pitch = apply_pitch_limits(settings.target_pitch);
+                        //     settings.target_radius = apply_zoom_limits(settings.target_radius);
+
+                        //     if !settings.allow_upside_down {
+                        //         settings.target_pitch = settings.target_pitch.clamp(-PI / 2.0, PI / 2.0);
+                        //     }
+
+                        //     // 4 - Update the camera's transform based on current values
+
+                        //     if let (Some(yaw), Some(pitch), Some(radius)) =
+                        //         (settings.yaw, settings.pitch, settings.radius)
+                        //     {
+                        //         if has_moved
+                        //             // For smoothed values, we must check whether current value is different from target
+                        //             // value. If we only checked whether the values were non-zero this frame, then
+                        //             // the camera would instantly stop moving as soon as you stopped moving it, instead
+                        //             // of smoothly stopping
+                        //             || settings.target_yaw != yaw
+                        //             || settings.target_pitch != pitch
+                        //             || settings.target_radius != radius
+                        //             || settings.target_focus != settings.focus
+                        //             || settings.force_update
+                        //         {
+                        //             // Interpolate towards the target values
+                        //             let new_yaw = util::lerp_and_snap_f32(
+                        //                 yaw,
+                        //                 settings.target_yaw,
+                        //                 settings.orbit_smoothness,
+                        //                 time.delta_seconds(),
+                        //             );
+                        //             let new_pitch = util::lerp_and_snap_f32(
+                        //                 pitch,
+                        //                 settings.target_pitch,
+                        //                 settings.orbit_smoothness,
+                        //                 time.delta_seconds(),
+                        //             );
+                        //             let new_radius = util::lerp_and_snap_f32(
+                        //                 radius,
+                        //                 settings.target_radius,
+                        //                 settings.zoom_smoothness,
+                        //                 time.delta_seconds(),
+                        //             );
+                        //             let new_focus = util::lerp_and_snap_vec3(
+                        //                 settings.focus,
+                        //                 settings.target_focus,
+                        //                 settings.pan_smoothness,
+                        //                 time.delta_seconds(),
+                        //             );
+
+                        //             util::update_orbit_transform(
+                        //                 new_yaw,
+                        //                 new_pitch,
+                        //                 new_radius,
+                        //                 new_focus,
+                        //                 &mut transform,
+                        //                 &mut projection,
+                        //             );
+
+                        //             // Update the current values
+                        //             settings.yaw = Some(new_yaw);
+                        //             settings.pitch = Some(new_pitch);
+                        //             settings.radius = Some(new_radius);
+                        //             settings.focus = new_focus;
+                        //             settings.force_update = false;
+                        //         }
+                        //     }
+
+                        // }
                     }
                 },
-                CameraMode::Observer => {
-                    if to_watch_querry.iter().len() > 0 {
-                        let mut point_count = 0.0;
-                        let mut cord_total = Vec3::new(0.0,0.0,0.0);
-                
-                        for e in to_watch_querry.iter() {
-                            if let Ok(trans) = transforms.get(e) {
-                                point_count += 1.0;
-                                cord_total += trans.translation;
+                CameraMode::Observer(observer_kind) => {
+                    
+                    match observer_kind {
+                        crate::Observer::Orbit => {
+                            if to_watch_querry.iter().len() > 0 {
+                                let mut point_count = 0.0;
+                                let mut cord_total = Vec3::new(0.0,0.0,0.0);
+                        
+                                for e in to_watch_querry.iter() {
+                                    if let Ok(trans) = transforms.get(e) {
+                                        point_count += 1.0;
+                                        cord_total += trans.translation;
+                                    }
+                                }
+                                cam_trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
+                        
                             }
-                        }
-                        cam_trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
-                
+                        },
                     }
+
                 }     
 
 
@@ -248,7 +453,8 @@ pub fn camera_look(
         let first_person_look = match camera_controls {
             CameraMode::POV(cam) => match cam.pov {
                 POV::FirstPerson => true,
-                POV::ThirdPerson => false
+                POV::ThirdPerson => false,
+                POV::Orbit => false,
 
             },
             CameraMode::Observer => false
