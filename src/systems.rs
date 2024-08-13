@@ -18,7 +18,7 @@ use crate::*;
 pub fn check_for_setting_toggles(
     //mut restraints_toggle: ResMut<RestraintsToggled>,
     //cameras: Query<(Entity, Option<&RestraintsToggled>), With<CameraControls>>,
-    camera_keybinds: Res<KeyBindings>,
+    camera_keybinds: Res<CamKeybinds>,
     keys: Res<ButtonInput<KeyCode>>,
     mut cameras: Query<(Entity, &mut CameraMode, Option<&mut CameraRestrained>)>,
     mut commands: Commands,
@@ -44,8 +44,10 @@ pub fn check_for_setting_toggles(
                     };
                     let pov = match cam.pov {
                         POV::FirstPerson => POV::ThirdPerson,
-                        POV::ThirdPerson => POV::Orbit,
-                        POV::Orbit => POV::FirstPerson,
+                        POV::ThirdPerson => POV::FirstPerson,
+                        // POV::FirstPerson => POV::ThirdPerson,
+                        // POV::ThirdPerson => POV::Orbit,
+                        // POV::Orbit => POV::FirstPerson,
                     };
                     CameraMode::POV(POVCam {
                         target: cam.target,
@@ -53,7 +55,7 @@ pub fn check_for_setting_toggles(
                         settings: settings
                     })
                 },
-                CameraMode::Observer => *camera_mode
+                CameraMode::Observer(cam) => *camera_mode
             }
         }
     }
@@ -63,9 +65,9 @@ pub fn check_for_setting_toggles(
                 CameraMode::POV(cam) => 
                 {
                     commands.entity(e).insert(POVCamCache(cam));
-                    CameraMode::Observer
+                    CameraMode::Observer(ObserverCam::Orbit)
                 }
-                CameraMode::Observer => {
+                CameraMode::Observer(..) => {
                     let cam = match pov_cam_settings.get(e) {
                         Ok(item) => item.0,
                         Err(_) => {
@@ -81,7 +83,7 @@ pub fn check_for_setting_toggles(
 }
 
 pub fn move_camera_based_on_mode(
-    to_watch_querry: Query<Entity, With<ObservedFrom>>,
+    to_watch_querry: Query<Entity, With<ObservedBy>>,
     mut cameras: Query<(Entity, &mut Transform, &mut Projection, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
     transforms: Query<&Transform, Without<Camera>>,
     pov_cam_settings: Query<&POVCamCache>,
@@ -337,7 +339,7 @@ pub fn move_camera_based_on_mode(
                 CameraMode::Observer(observer_kind) => {
                     
                     match observer_kind {
-                        crate::Observer::Orbit => {
+                        ObserverCam::Orbit => {
                             if to_watch_querry.iter().len() > 0 {
                                 let mut point_count = 0.0;
                                 let mut cord_total = Vec3::new(0.0,0.0,0.0);
@@ -371,7 +373,7 @@ pub fn camera_move(
     time: Res<Time>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
-    key_bindings: Res<KeyBindings>,
+    key_bindings: Res<CamKeybinds>,
     //restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<(&CameraMode, &mut Transform, Option<&CameraRestrained>), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
@@ -454,10 +456,10 @@ pub fn camera_look(
             CameraMode::POV(cam) => match cam.pov {
                 POV::FirstPerson => true,
                 POV::ThirdPerson => false,
-                POV::Orbit => false,
+                //POV::Orbit => false,
 
             },
-            CameraMode::Observer => false
+            CameraMode::Observer(..) => false
         };
         
         if restraints_toggled == false || first_person_look {
@@ -485,7 +487,7 @@ pub fn camera_look(
 pub fn cursor_grab(
     grabbed: ResMut<CursorGrabbed>,
     keys: Res<ButtonInput<KeyCode>>,
-    key_bindings: Res<KeyBindings>,
+    key_bindings: Res<CamKeybinds>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
     if let Ok(mut window) = primary_window.get_single_mut() {

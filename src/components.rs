@@ -22,14 +22,14 @@ pub struct CameraTarget;
 
 // camera that is targeting this
 #[derive(Component, Reflect)]
-pub struct ObservedFrom(pub Entity);
+pub struct ObservedBy(pub Entity);
 
 /// cached pov cam from camera when it was last in POV mode.
 #[derive(Component, Clone, Copy, Reflect)]
 pub struct POVCamCache(pub POVCam);
 
 
-#[derive(Clone, Copy, PartialEq, Reflect)]
+#[derive(Clone, Copy, PartialEq, Reflect, Debug)]
 pub struct POVCamSettings {
     pub camera_distance_offset: Vec2,
         /// The radius of the orbit, or the distance from the `focus` point.
@@ -115,28 +115,28 @@ impl Default for POVCamSettings {
     }
 }
 
-#[derive(Component, Clone, Copy, Reflect, PartialEq)]
+#[derive(Component, Clone, Copy, Reflect, PartialEq, Debug)]
 pub enum CameraMode {
     POV(POVCam),
-    Observer(Observer)
+    Observer(ObserverCam)
 }
 
-#[derive(Clone, Copy, PartialEq, Reflect)]
+#[derive(Clone, Copy, PartialEq, Reflect, Debug)]
 pub struct POVCam {
     pub target: Entity,
     pub pov: POV,
     pub settings: POVCamSettings
 }
 
-#[derive(Reflect, Copy, Clone, PartialEq)]
+#[derive(Reflect, Copy, Clone, PartialEq, Debug)]
 pub enum POV {
     FirstPerson,
     ThirdPerson,
     //Orbit,
 }
 
-#[derive(Reflect, Clone, Copy, PartialEq)]
-pub enum Observer {
+#[derive(Reflect, Clone, Copy, PartialEq, Debug)]
+pub enum ObserverCam {
     Orbit,
 }
 

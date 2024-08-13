@@ -3,8 +3,8 @@ use bevy_input::{mouse::MouseMotion, prelude::*};
 use glam::Vec3;
 
 /// Key configuration for camera
-#[derive(Resource, Clone, Copy)]
-pub struct KeyBindings {
+#[derive(Resource, Clone, Copy, Debug)]
+pub struct CamKeybinds {
     pub move_forward: KeyCode,
     pub move_backward: KeyCode,
     pub move_left: KeyCode,
@@ -31,7 +31,7 @@ pub struct KeyBindings {
 
 }
 
-impl Default for KeyBindings {
+impl Default for CamKeybinds {
     fn default() -> Self {
         Self {
             move_forward: KeyCode::KeyW,

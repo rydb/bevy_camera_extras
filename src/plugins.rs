@@ -6,7 +6,7 @@ use super::*;
 pub struct CameraExtrasPlugin {
     pub cursor_grabbed_by_default: bool,
     /// optional override for [`KeyBindings`], leave as None for default settings.
-    pub keybinds_override: Option<KeyBindings>,
+    pub keybinds_override: Option<CamKeybinds>,
     /// optional override for [`MovementSettings`], leave as None for default settings.
     pub movement_settings_override: Option<MovementSettings>
 }
