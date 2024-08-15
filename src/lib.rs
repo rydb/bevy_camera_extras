@@ -1,22 +1,21 @@
-mod plugins;
 mod components;
+mod plugins;
 mod resources;
 mod systems;
 
-use bevy_transform::prelude::*;
-use bevy_render::prelude::*;
 use bevy_ecs::prelude::Bundle;
+use bevy_render::prelude::*;
+use bevy_transform::prelude::*;
 pub use components::*;
 use glam::{Quat, Vec3};
 pub use plugins::*;
 pub use resources::*;
 use systems::*;
 
-
 /// Free fly cam.
 #[derive(Bundle)]
 pub struct CameraControllerFree {
-    pub restrained: CameraRestrained
+    pub restrained: CameraRestrained,
 }
 
 /// Camera attached to something. Specfic behaviour depends on [`CameraMode`]
@@ -26,7 +25,6 @@ pub struct CameraController {
     pub camera_mode: CameraMode,
     //pub targeting: CameraTargeting,
 }
-
 
 pub fn calculate_from_translation_and_focus(translation: Vec3, focus: Vec3) -> (f32, f32, f32) {
     let comp_vec = translation - focus;

@@ -1,6 +1,5 @@
-use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_app::prelude::*;
-use bevy_window::WindowPlugin;
+use bevy_ecs::schedule::IntoSystemConfigs;
 
 use super::*;
 
@@ -10,9 +9,8 @@ pub struct CameraExtrasPlugin {
     /// optional override for [`KeyBindings`], leave as None for default settings.
     pub keybinds_override: Option<CamKeybinds>,
     /// optional override for [`MovementSettings`], leave as None for default settings.
-    pub movement_settings_override: Option<MovementSettings>
+    pub movement_settings_override: Option<MovementSettings>,
 }
-
 
 impl Default for CameraExtrasPlugin {
     fn default() -> Self {
@@ -26,36 +24,29 @@ impl Default for CameraExtrasPlugin {
 
 impl Plugin for CameraExtrasPlugin {
     fn build(&self, app: &mut App) {
-        
-        app
-        .register_type::<CameraRestrained>()
-        .register_type::<CameraMode>()
-        .register_type::<POVCamCache>()
-        .register_type::<CamKeybinds>()
-
-        .init_resource::<InputState>()
-        //.init_resource::<RestraintsToggled>()
-        .insert_resource(CursorGrabbed(self.cursor_grabbed_by_default))
-        .insert_resource(self.keybinds_override.unwrap_or_default())
-        .insert_resource(self.movement_settings_override.unwrap_or_default())
-        
-        .add_systems(PostStartup, set_intial_grab_state)
-        // .add_systems(Update, (
-        //     follow_flagged, 
-        //     watch_flagged, 
-        //     move_to_attached
-        // ))
-        .add_systems(Update, move_camera_based_on_mode)
-        .add_systems(Update, (
-                camera_look,
-                camera_move,
+        app.register_type::<CameraRestrained>()
+            .register_type::<CameraMode>()
+            .register_type::<POVCamCache>()
+            .register_type::<CamKeybinds>()
+            .init_resource::<InputState>()
+            //.init_resource::<RestraintsToggled>()
+            .insert_resource(CursorGrabbed(self.cursor_grabbed_by_default))
+            .insert_resource(self.keybinds_override.unwrap_or_default())
+            .insert_resource(self.movement_settings_override.unwrap_or_default())
+            .add_systems(PostStartup, set_intial_grab_state)
+            // .add_systems(Update, (
+            //     follow_flagged,
+            //     watch_flagged,
+            //     move_to_attached
+            // ))
+            .add_systems(Update, move_camera_based_on_mode)
+            .add_systems(
+                Update,
+                (camera_look, camera_move)
+                    .before(TransformSystem::TransformPropagate)
+                    .chain(),
             )
-            .before(TransformSystem::TransformPropagate)
-            .chain()
-        )
-
-        .add_systems(Update, cursor_grab)
-        .add_systems(Update, check_for_setting_toggles)
-        ;
+            .add_systems(Update, cursor_grab)
+            .add_systems(Update, check_for_setting_toggles);
     }
 }

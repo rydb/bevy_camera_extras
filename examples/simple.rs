@@ -2,11 +2,8 @@
 
 use bevy::prelude::*;
 use bevy_camera_extras::*;
-use bevy_inspector_egui::{bevy_egui::EguiContext, quick::WorldInspectorPlugin};
-use bevy_ui_extras::{visualize_components_for, visualize_resource, Side};
-use bevy_window::PrimaryWindow;
-use egui::{text::LayoutJob, Color32, FontId, RichText, TextFormat};
-use egui_extras::syntax_highlighting::CodeTheme;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_ui_extras::{visualize_components_for, visualize_resource};
 
 fn main() {
     App::new()
@@ -18,8 +15,16 @@ fn main() {
         })
         .add_plugins(WorldInspectorPlugin::default())
         .add_systems(PostStartup, setup)
-        .add_systems(Update, visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(bevy_ui_extras::Side::Right)))
-        .add_systems(Update, visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window))
+        .add_systems(
+            Update,
+            visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(
+                bevy_ui_extras::Side::Right,
+            )),
+        )
+        .add_systems(
+            Update,
+            visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window),
+        )
         .run();
 }
 // pub fn display_controls(
@@ -27,7 +32,6 @@ fn main() {
 //     keybinds: Res<CamKeybinds>,
 //     camera: Query<&CameraMode>
 // ) {
-
 
 //     //let pretty_camera_controls = egui::RichText::new(camera_controls)
 //     for mut context in primary_window.iter_mut() {
@@ -57,7 +61,7 @@ fn main() {
 
 //                 return job
 //             };
-    
+
 //             for (n, token) in tokens.iter().enumerate() {
 //                 let color = if Some(token) == tokens.last() {
 //                     Color32::WHITE
@@ -97,25 +101,26 @@ fn setup(
 ) {
     // plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::new(Vec3::new(0.0, 1.0, 0.0), Vec2::new(10.0, 10.0))),
+        mesh: meshes.add(Plane3d::new(
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec2::new(10.0, 10.0),
+        )),
         material: materials.add(Color::srgb(0.3, 0.5, 0.3)),
         ..default()
     });
-    
+
     // player
-    let cube = commands.spawn(
-    (
+    let cube = commands
+        .spawn((
             PbrBundle {
                 mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
                 material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
                 transform: Transform::from_xyz(0.0, 0.5, 0.0),
                 ..default()
-                
             },
             Name::new("player"),
-        )
-
-    ).id();
+        ))
+        .id();
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -127,22 +132,23 @@ fn setup(
         ..default()
     });
     // camera
-    let cam = commands.spawn(
-    (
-        Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-        },
-        CameraController {
-            camera_mode: CameraMode::POV(POVCam {
-                target: cube,
-                pov: POV::FirstPerson,
-                settings: POVCamSettings::default()
-            }),
-            restrained: CameraRestrained(true),
-            //targeting: CameraTargeting(Some(cube)),
-        }
-    )).id();    
-    
+    let cam = commands
+        .spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+                ..default()
+            },
+            CameraController {
+                camera_mode: CameraMode::POV(POVCam {
+                    target: cube,
+                    pov: POV::FirstPerson,
+                    settings: POVCamSettings::default(),
+                }),
+                restrained: CameraRestrained(true),
+                //targeting: CameraTargeting(Some(cube)),
+            },
+        ))
+        .id();
+
     commands.entity(cube).insert(ObservedBy(cam));
 }

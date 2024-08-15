@@ -1,16 +1,16 @@
 use std::*;
 
 use bevy_ecs::prelude::*;
+use bevy_input::prelude::*;
 use bevy_input::ButtonInput;
 use bevy_render::camera::Camera;
 use bevy_transform::components::Transform;
-use bevy_input::prelude::*;
-use glam::{Vec2, Vec3};
+use glam::Vec3;
 
 use bevy_input::mouse::MouseMotion;
 use bevy_log::prelude::*;
-use bevy_window::{prelude::*, CursorGrabMode, PrimaryWindow};
 use bevy_time::prelude::*;
+use bevy_window::{prelude::*, CursorGrabMode, PrimaryWindow};
 use glam::{EulerRot, Quat};
 
 use crate::*;
@@ -27,7 +27,6 @@ pub fn check_for_setting_toggles(
     if keys.just_pressed(camera_keybinds.toggle_restraints) {
         for (_, _, restraints_check) in cameras.iter_mut() {
             if let Some(mut toggle) = restraints_check {
-            
                 toggle.0 ^= true;
             }
         }
@@ -35,7 +34,6 @@ pub fn check_for_setting_toggles(
     }
     if keys.just_pressed(camera_keybinds.switch_camera_mode) {
         for (e, mut camera_mode, _) in cameras.iter_mut() {
-            
             *camera_mode = match *camera_mode {
                 CameraMode::POV(cam) => {
                     let settings = match pov_cam_settings.get(e) {
@@ -52,18 +50,17 @@ pub fn check_for_setting_toggles(
                     CameraMode::POV(POVCam {
                         target: cam.target,
                         pov: pov,
-                        settings: settings
+                        settings: settings,
                     })
-                },
-                CameraMode::Observer(cam) => *camera_mode
+                }
+                CameraMode::Observer(..) => *camera_mode,
             }
         }
     }
     if keys.just_pressed(camera_keybinds.switch_camera_kind) {
         for (e, mut camera_mode, _) in cameras.iter_mut() {
             *camera_mode = match *camera_mode {
-                CameraMode::POV(cam) => 
-                {
+                CameraMode::POV(cam) => {
                     commands.entity(e).insert(POVCamCache(cam));
                     CameraMode::Observer(ObserverCam::Orbit)
                 }
@@ -72,11 +69,11 @@ pub fn check_for_setting_toggles(
                         Ok(item) => item.0,
                         Err(_) => {
                             warn!("switching to camera without previously set POV cam settings not implemented, ignoring this attempt");
-                            return
-                        },
+                            return;
+                        }
                     };
                     CameraMode::POV(cam)
-                },
+                }
             }
         }
     }
@@ -84,15 +81,23 @@ pub fn check_for_setting_toggles(
 
 pub fn move_camera_based_on_mode(
     to_watch_querry: Query<Entity, With<ObservedBy>>,
-    mut cameras: Query<(Entity, &mut Transform, &mut Projection, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
+    mut cameras: Query<
+        (
+            Entity,
+            &mut Transform,
+            &mut Projection,
+            &CameraMode,
+            Option<&CameraRestrained>,
+        ),
+        With<Camera>,
+    >,
     transforms: Query<&Transform, Without<Camera>>,
     pov_cam_settings: Query<&POVCamCache>,
     //keys: Res<ButtonInput<KeyCode>>,
     //restraints_toggle: Res<RestraintsToggled>,
 ) {
     //if restraints_toggle.0 == true {
-    for (cam_entity, mut cam_trans, mut projection, cam_info, restrained) in cameras.iter_mut() {
-    
+    for (cam_entity, mut cam_trans, mut _projection, cam_info, restrained) in cameras.iter_mut() {
         //let Ok(cam_trans) = transforms.get_mut(camera_entity) else {return;};
         //let Some(attach_target) = targeting.target else {return;};
         let restraints_toggled = match restrained {
@@ -104,38 +109,38 @@ pub fn move_camera_based_on_mode(
                 Ok(item) => item.0.settings,
                 Err(_) => POVCamSettings::default(),
             };
-            match cam_info{
-                
+            match cam_info {
                 CameraMode::POV(cam) => {
-
-                    let Ok(target_trans) = transforms.get(cam.target) else {return;};
+                    let Ok(target_trans) = transforms.get(cam.target) else {
+                        return;
+                    };
 
                     match cam.pov {
                         POV::FirstPerson => {
                             //let Some(target) = targeting.0 else {return};
                             cam_trans.translation = target_trans.translation
-                        },
+                        }
                         POV::ThirdPerson => {
-                            
                             let car_position = target_trans.translation;
                             let car_forward = target_trans.forward();
-                
+
                             // Camera should follow the car from above and slightly behind it
                             // let follow_distance = 15.0;
                             // let follow_height = 10.0;
                             let follow_distance = settings.camera_distance_offset.x;
                             let follow_height = settings.camera_distance_offset.y;
-                
+
                             // Calculate desired camera position behind the car
-                            let mut desired_camera_position = car_position - car_forward * follow_distance;
+                            let mut desired_camera_position =
+                                car_position - car_forward * follow_distance;
                             desired_camera_position.y += follow_height;
-                
+
                             // Smoothly move the camera to the desired position
                             cam_trans.translation = desired_camera_position;
-                
+
                             // Make the camera look at the car with a slight downward angle
                             cam_trans.look_at(car_position, Vec3::Y);
-                        },
+                        }
                         // POV::Orbit => {
                         //     if !settings.initialized {
                         //         // Calculate yaw, pitch, and radius from the camera's position. If user sets all
@@ -337,21 +342,15 @@ pub fn move_camera_based_on_mode(
 
                         // }
                     }
-                },
+                }
                 CameraMode::Observer(observer_kind) => {
-                    
                     match observer_kind {
                         ObserverCam::Orbit => {
                             let mut point_count = 0.0;
-                            let mut cord_total = Vec3::new(0.0,0.0,0.0);
-                            
+                            let mut cord_total = Vec3::new(0.0, 0.0, 0.0);
+
                             if to_watch_querry.iter().len() > 0 {
-                            
-
-
                                 for e in to_watch_querry.iter() {
-
-                                    
                                     if let Ok(trans) = transforms.get(e) {
                                         point_count += 1.0;
                                         cord_total += trans.translation;
@@ -359,18 +358,16 @@ pub fn move_camera_based_on_mode(
                                 }
                                 //cam_trans.translation = Vec3::new(settings.camera_distance_offset.x, cam_trans.translation.y, settings.camera_distance_offset.y);
 
-                                cam_trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
+                                cam_trans.look_at(
+                                    cord_total / Vec3::new(point_count, point_count, point_count),
+                                    Vec3::new(0.0, 0.0, 0.0),
+                                );
                             }
-                        },
+                        }
                     }
-
-                }     
-
-
-            };    
+                }
+            };
         }
-
-
     }
     //}
 }
@@ -403,8 +400,7 @@ pub fn camera_move(
             let local_z = transform.local_z();
             let forward = -Vec3::new(local_z.x, 0., local_z.z);
             let right = Vec3::new(local_z.z, 0., -local_z.x);
-    
-    
+
             for key in keys.get_pressed() {
                 match window.cursor.grab_mode {
                     CursorGrabMode::None => (),
@@ -412,15 +408,20 @@ pub fn camera_move(
                         let key = *key;
                         if key == key_bindings.move_forward {
                             velocity += forward;
-                        } if key == key_bindings.move_backward {
+                        }
+                        if key == key_bindings.move_backward {
                             velocity -= forward;
-                        } if key == key_bindings.move_left {
+                        }
+                        if key == key_bindings.move_left {
                             velocity -= right;
-                        } if key == key_bindings.move_right {
+                        }
+                        if key == key_bindings.move_right {
                             velocity += right;
-                        } if key == key_bindings.move_ascend {
+                        }
+                        if key == key_bindings.move_ascend {
                             velocity += Vec3::Y;
-                        } if key == key_bindings.move_descend {
+                        }
+                        if key == key_bindings.move_descend {
                             velocity -= Vec3::Y;
                         }
                     }
@@ -428,12 +429,9 @@ pub fn camera_move(
             }
             velocity = velocity.normalize_or_zero();
             transform.translation += velocity * time.delta_seconds() * settings.speed
-    
         }
-
     }
 }
-
 
 /// Handles looking around if cursor is locked
 pub fn camera_look(
@@ -444,7 +442,6 @@ pub fn camera_look(
     //restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
 ) {
-
     let window = match primary_window.get_single() {
         Ok(win) => win,
         Err(err) => {
@@ -452,7 +449,6 @@ pub fn camera_look(
             return;
         }
     };
-
 
     //if restraints_toggled.0 == false {
     for (mut transform, camera_controls, restraints) in query.iter_mut() {
@@ -465,11 +461,10 @@ pub fn camera_look(
                 POV::FirstPerson => true,
                 POV::ThirdPerson => false,
                 //POV::Orbit => false,
-
             },
-            CameraMode::Observer(..) => false
+            CameraMode::Observer(..) => false,
         };
-        
+
         if restraints_toggled == false || first_person_look {
             for ev in state.reader_motion.read(&motion) {
                 let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
@@ -488,7 +483,7 @@ pub fn camera_look(
                 transform.rotation =
                     Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
             }
-        } 
+        }
     }
 }
 
@@ -516,7 +511,7 @@ pub fn toggle_grab_cursor(window: &mut Window, grabbed: &mut ResMut<CursorGrabbe
             window.cursor.hit_test = true;
 
             grabbed.0 = true;
-        },
+        }
         true => {
             //window.set_cursor_position(Some(Vec2::new(0.0, 0.0)));
 
@@ -525,20 +520,17 @@ pub fn toggle_grab_cursor(window: &mut Window, grabbed: &mut ResMut<CursorGrabbe
             window.cursor.hit_test = false;
 
             grabbed.0 = false;
-        },
+        }
     }
 }
-
 
 pub fn set_intial_grab_state(
     mut grabbed: ResMut<CursorGrabbed>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    
     if let Ok(mut window) = primary_window.get_single_mut() {
         info!("setting initial grab state");
 
         toggle_grab_cursor(&mut window, &mut grabbed);
-
     }
 }

@@ -1,7 +1,6 @@
 use bevy_ecs::{event::ManualEventReader, prelude::*};
 use bevy_input::{mouse::MouseMotion, prelude::*};
 use bevy_reflect::Reflect;
-use glam::Vec3;
 
 /// Key configuration for camera
 #[derive(Resource, Reflect, Clone, Copy, Debug)]
@@ -15,7 +14,7 @@ pub struct CamKeybinds {
     pub toggle_grab_cursor: KeyCode,
     /// toggle insertered restraints on camera.
     pub toggle_restraints: KeyCode,
-    
+
     /// Switch between different modes of current camera kind.
     pub switch_camera_mode: KeyCode,
 
@@ -29,7 +28,6 @@ pub struct CamKeybinds {
     /// Key that must be pressed for `button_orbit` to work.
     /// Defaults to `None` (no modifier).
     pub modifier_orbit: Option<KeyCode>,
-
 }
 
 impl Default for CamKeybinds {
@@ -47,13 +45,11 @@ impl Default for CamKeybinds {
             switch_camera_kind: KeyCode::Backquote,
             orbit_drag_button: MouseButton::Left,
             modifier_orbit: None,
-
-
         }
     }
 }
 
-// Weather the window should grab or not grab the cursor. 
+// Weather the window should grab or not grab the cursor.
 #[derive(Default, Resource, Debug)]
 pub struct CursorGrabbed(pub bool);
 
