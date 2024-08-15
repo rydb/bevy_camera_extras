@@ -1,4 +1,6 @@
+use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_app::prelude::*;
+use bevy_window::WindowPlugin;
 
 use super::*;
 
@@ -29,7 +31,7 @@ impl Plugin for CameraExtrasPlugin {
         .register_type::<CameraRestrained>()
         .register_type::<CameraMode>()
         .register_type::<POVCamCache>()
-        //.register_type::<CameraTargeting>()
+        .register_type::<CamKeybinds>()
 
         .init_resource::<InputState>()
         //.init_resource::<RestraintsToggled>()
@@ -44,8 +46,14 @@ impl Plugin for CameraExtrasPlugin {
         //     move_to_attached
         // ))
         .add_systems(Update, move_camera_based_on_mode)
-        .add_systems(Update, camera_move)
-        .add_systems(Update, camera_look)
+        .add_systems(Update, (
+                camera_look,
+                camera_move,
+            )
+            .before(TransformSystem::TransformPropagate)
+            .chain()
+        )
+
         .add_systems(Update, cursor_grab)
         .add_systems(Update, check_for_setting_toggles)
         ;

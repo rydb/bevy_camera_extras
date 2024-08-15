@@ -100,12 +100,14 @@ pub fn move_camera_based_on_mode(
             None => false,
         };
         if restraints_toggled == true {
+            let settings = match pov_cam_settings.get(cam_entity) {
+                Ok(item) => item.0.settings,
+                Err(_) => POVCamSettings::default(),
+            };
             match cam_info{
+                
                 CameraMode::POV(cam) => {
-                    let settings = match pov_cam_settings.get(cam_entity) {
-                        Ok(item) => item.0.settings,
-                        Err(_) => POVCamSettings::default(),
-                    };
+
                     let Ok(target_trans) = transforms.get(cam.target) else {return;};
 
                     match cam.pov {
@@ -340,18 +342,24 @@ pub fn move_camera_based_on_mode(
                     
                     match observer_kind {
                         ObserverCam::Orbit => {
+                            let mut point_count = 0.0;
+                            let mut cord_total = Vec3::new(0.0,0.0,0.0);
+                            
                             if to_watch_querry.iter().len() > 0 {
-                                let mut point_count = 0.0;
-                                let mut cord_total = Vec3::new(0.0,0.0,0.0);
-                        
+                            
+
+
                                 for e in to_watch_querry.iter() {
+
+                                    
                                     if let Ok(trans) = transforms.get(e) {
                                         point_count += 1.0;
                                         cord_total += trans.translation;
                                     }
                                 }
+                                //cam_trans.translation = Vec3::new(settings.camera_distance_offset.x, cam_trans.translation.y, settings.camera_distance_offset.y);
+
                                 cam_trans.look_at(cord_total / Vec3::new(point_count, point_count, point_count), Vec3::new(0.0,0.0,0.0));
-                        
                             }
                         },
                     }
@@ -385,12 +393,12 @@ pub fn camera_move(
         }
     };
 
-    for (_camera, mut transform, target_config) in query.iter_mut() {
+    for (camera, mut transform, target_config) in query.iter_mut() {
         let restraints_toggled = match target_config {
             Some(toggle) => toggle.0,
             None => false,
         };
-        if restraints_toggled == false{
+        if restraints_toggled == false || camera == &CameraMode::Observer(ObserverCam::Orbit) {
             let mut velocity = Vec3::ZERO;
             let local_z = transform.local_z();
             let forward = -Vec3::new(local_z.x, 0., local_z.z);
@@ -485,14 +493,14 @@ pub fn camera_look(
 }
 
 pub fn cursor_grab(
-    grabbed: ResMut<CursorGrabbed>,
+    mut grabbed: ResMut<CursorGrabbed>,
     keys: Res<ButtonInput<KeyCode>>,
     key_bindings: Res<CamKeybinds>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
     if let Ok(mut window) = primary_window.get_single_mut() {
         if keys.just_pressed(key_bindings.toggle_grab_cursor) {
-            toggle_grab_cursor(&mut window, grabbed);
+            toggle_grab_cursor(&mut window, &mut grabbed);
         }
     } else {
         warn!("Primary window not found for `cursor_grab`!");
@@ -500,18 +508,22 @@ pub fn cursor_grab(
 }
 
 /// Grabs/ungrabs mouse cursor
-pub fn toggle_grab_cursor(window: &mut Window, mut grabbed: ResMut<CursorGrabbed>) {
+pub fn toggle_grab_cursor(window: &mut Window, grabbed: &mut ResMut<CursorGrabbed>) {
     match grabbed.0 {
         false => {
             window.cursor.grab_mode = CursorGrabMode::None;
             window.cursor.visible = true;
-            
+            window.cursor.hit_test = true;
+
             grabbed.0 = true;
         },
         true => {
-            window.cursor.grab_mode = CursorGrabMode::Confined;
+            //window.set_cursor_position(Some(Vec2::new(0.0, 0.0)));
+
+            window.cursor.grab_mode = CursorGrabMode::Locked;
             window.cursor.visible = false;
-            
+            window.cursor.hit_test = false;
+
             grabbed.0 = false;
         },
     }
@@ -519,12 +531,14 @@ pub fn toggle_grab_cursor(window: &mut Window, mut grabbed: ResMut<CursorGrabbed
 
 
 pub fn set_intial_grab_state(
-    grabbed: ResMut<CursorGrabbed>,
+    mut grabbed: ResMut<CursorGrabbed>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
+    
     if let Ok(mut window) = primary_window.get_single_mut() {
-        println!("setting initial grab state");
+        info!("setting initial grab state");
 
-        toggle_grab_cursor(&mut window, grabbed);
+        toggle_grab_cursor(&mut window, &mut grabbed);
+
     }
 }

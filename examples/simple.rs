@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use bevy_camera_extras::*;
 use bevy_inspector_egui::{bevy_egui::EguiContext, quick::WorldInspectorPlugin};
-use bevy_ui_extras::systems::visualize_right_sidepanel_for;
+use bevy_ui_extras::{visualize_components_for, visualize_resource, Side};
 use bevy_window::PrimaryWindow;
 use egui::{text::LayoutJob, Color32, FontId, RichText, TextFormat};
 use egui_extras::syntax_highlighting::CodeTheme;
@@ -17,77 +17,77 @@ fn main() {
             movement_settings_override: None,
         })
         .add_plugins(WorldInspectorPlugin::default())
-        .add_systems(Startup, setup)
-        .add_systems(Update, display_controls)
-        .add_systems(Update, visualize_right_sidepanel_for::<CameraMode>)
+        .add_systems(PostStartup, setup)
+        .add_systems(Update, visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(bevy_ui_extras::Side::Right)))
+        .add_systems(Update, visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window))
         .run();
 }
-pub fn display_controls(
-    mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    keybinds: Res<CamKeybinds>,
-    camera: Query<&CameraMode>
-) {
+// pub fn display_controls(
+//     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+//     keybinds: Res<CamKeybinds>,
+//     camera: Query<&CameraMode>
+// ) {
 
 
-    //let pretty_camera_controls = egui::RichText::new(camera_controls)
-    for mut context in primary_window.iter_mut() {
-        let camera_controls = format!("{:#?}", *keybinds);
+//     //let pretty_camera_controls = egui::RichText::new(camera_controls)
+//     for mut context in primary_window.iter_mut() {
+//         let camera_controls = format!("{:#?}", *keybinds);
 
-        let Ok(camera_mode) = camera.get_single() else {return;};
-        let lines = camera_controls.split("\n")
-        .enumerate()
-        .map(|(i, line)| {
-            let mut job = LayoutJob::default();
-            let tokens = line.split(&[':', '{', '}'][..]).collect::<Vec<_>>();
-            println!("tokens for line {:#}, are {:#?}", i, tokens);
-            if i == 0 {
-                for (n, token) in tokens.iter().enumerate() {
-                    let color = if n == 0 {
-                        Color32::GREEN
-                    } else {
-                        Color32::WHITE
-                    };
-                    job.append(token, 0.0, TextFormat {
-                        font_id: FontId::new(14.0, egui::FontFamily::Proportional),
-                        color: color,
-                        //background: Color32::WHITE,
-                        ..Default::default()
-                    });
-                }
+//         let Ok(camera_mode) = camera.get_single() else {return;};
+//         let lines = camera_controls.split("\n")
+//         .enumerate()
+//         .map(|(i, line)| {
+//             let mut job = LayoutJob::default();
+//             let tokens = line.split(&[':', '{', '}'][..]).collect::<Vec<_>>();
+//             println!("tokens for line {:#}, are {:#?}", i, tokens);
+//             if i == 0 {
+//                 for (n, token) in tokens.iter().enumerate() {
+//                     let color = if n == 0 {
+//                         Color32::GREEN
+//                     } else {
+//                         Color32::WHITE
+//                     };
+//                     job.append(token, 0.0, TextFormat {
+//                         font_id: FontId::new(14.0, egui::FontFamily::Proportional),
+//                         color: color,
+//                         //background: Color32::WHITE,
+//                         ..Default::default()
+//                     });
+//                 }
 
-                return job
-            };
+//                 return job
+//             };
     
-            for (n, token) in tokens.iter().enumerate() {
-                let color = if Some(token) == tokens.last() {
-                    Color32::WHITE
-                } else if n == 0 {
-                    Color32::LIGHT_BLUE
-                } else {
-                    Color32::WHITE
-                };
-                job.append(&(token.to_string() + " "), 0.0, TextFormat {
-                    font_id: FontId::new(14.0, egui::FontFamily::Proportional),
-                    color: color,
-                    //background: Color32::WHITE,
-                    ..Default::default()
-                })
-            }
-            job
-        })
-        .collect::<Vec<_>>();
+//             for (n, token) in tokens.iter().enumerate() {
+//                 let color = if Some(token) == tokens.last() {
+//                     Color32::WHITE
+//                 } else if n == 0 {
+//                     Color32::LIGHT_BLUE
+//                 } else {
+//                     Color32::WHITE
+//                 };
+//                 job.append(&(token.to_string() + " "), 0.0, TextFormat {
+//                     font_id: FontId::new(14.0, egui::FontFamily::Proportional),
+//                     color: color,
+//                     //background: Color32::WHITE,
+//                     ..Default::default()
+//                 })
+//             }
+//             job
+//         })
+//         .collect::<Vec<_>>();
 
-        egui::Window::new("Camera Controls")
-        .show(context.get_mut(), |ui| {
-            //egui_extras::syntax_highlighting::highlight(ui.ctx(), &CodeTheme::dark(), &camera_controls, "rs");
+//         egui::Window::new("Camera Controls")
+//         .show(context.get_mut(), |ui| {
+//             //egui_extras::syntax_highlighting::highlight(ui.ctx(), &CodeTheme::dark(), &camera_controls, "rs");
 
-            for line in lines {
-                ui.label(line);
-            }
-            ui.label(format!("{:#?}", camera_mode));
-        });
-    }
-}
+//             for line in lines {
+//                 ui.label(line);
+//             }
+//             ui.label(format!("{:#?}", camera_mode));
+//         });
+//     }
+// }
 
 /// set up a simple 3D scene
 fn setup(

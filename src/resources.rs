@@ -1,9 +1,10 @@
 use bevy_ecs::{event::ManualEventReader, prelude::*};
 use bevy_input::{mouse::MouseMotion, prelude::*};
+use bevy_reflect::Reflect;
 use glam::Vec3;
 
 /// Key configuration for camera
-#[derive(Resource, Clone, Copy, Debug)]
+#[derive(Resource, Reflect, Clone, Copy, Debug)]
 pub struct CamKeybinds {
     pub move_forward: KeyCode,
     pub move_backward: KeyCode,
@@ -53,7 +54,7 @@ impl Default for CamKeybinds {
 }
 
 // Weather the window should grab or not grab the cursor. 
-#[derive(Default, Resource)]
+#[derive(Default, Resource, Debug)]
 pub struct CursorGrabbed(pub bool);
 
 /// Mouse sensitivity and movement speed
