@@ -12,12 +12,6 @@ pub use plugins::*;
 pub use resources::*;
 use systems::*;
 
-/// Free fly cam.
-#[derive(Bundle)]
-pub struct CameraControllerFree {
-    pub restrained: CameraRestrained,
-}
-
 /// Camera attached to something. Specfic behaviour depends on [`CameraMode`]
 #[derive(Bundle)]
 pub struct CameraController {

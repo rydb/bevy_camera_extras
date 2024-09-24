@@ -1,3 +1,4 @@
+use bevy_ecs::prelude::ReflectComponent;
 use bevy_ecs::{component::Component, entity::Entity};
 use bevy_reflect::Reflect;
 use glam::Vec2;
@@ -76,7 +77,9 @@ impl Default for POVCamSettings {
 }
 
 #[derive(Component, Clone, Copy, Reflect, PartialEq, Debug)]
+#[reflect(Component)]
 pub enum CameraMode {
+    Free,
     POV(POVCam),
     Observer(ObserverCam),
 }
@@ -113,6 +116,7 @@ pub enum ObserverCam {
 // pub struct Watched;
 
 #[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct CameraRestrained(pub bool);
 
 // #[derive(Component, Reflect)]

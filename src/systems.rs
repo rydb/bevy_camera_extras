@@ -16,8 +16,6 @@ use glam::{EulerRot, Quat};
 use crate::*;
 
 pub fn check_for_setting_toggles(
-    //mut restraints_toggle: ResMut<RestraintsToggled>,
-    //cameras: Query<(Entity, Option<&RestraintsToggled>), With<CameraControls>>,
     camera_keybinds: Res<CamKeybinds>,
     keys: Res<ButtonInput<KeyCode>>,
     mut cameras: Query<(Entity, &mut CameraMode, Option<&mut CameraRestrained>)>,
@@ -54,6 +52,7 @@ pub fn check_for_setting_toggles(
                     })
                 }
                 CameraMode::Observer(..) => *camera_mode,
+                CameraMode::Free => *camera_mode
             }
         }
     }
@@ -65,6 +64,9 @@ pub fn check_for_setting_toggles(
                     CameraMode::Observer(ObserverCam::Orbit)
                 }
                 CameraMode::Observer(..) => {
+                    CameraMode::Free
+                }
+                CameraMode::Free => {
                     let cam = match pov_cam_settings.get(e) {
                         Ok(item) => item.0,
                         Err(_) => {
@@ -366,6 +368,7 @@ pub fn move_camera_based_on_mode(
                         }
                     }
                 }
+                CameraMode::Free => {},
             };
         }
     }
@@ -463,6 +466,7 @@ pub fn camera_look(
                 //POV::Orbit => false,
             },
             CameraMode::Observer(..) => false,
+            CameraMode::Free => true,
         };
 
         if restraints_toggled == false || first_person_look {
