@@ -2,20 +2,18 @@
 
 use bevy::prelude::*;
 use bevy_camera_extras::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_ui_extras::{visualize_components_for, visualize_resource, UiExtrasDebug};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(UiExtrasDebug)
+        .add_plugins(UiExtrasDebug::default())
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
             keybinds_override: None,
             movement_settings_override: None,
         })
-        .add_plugins(WorldInspectorPlugin::default())
-        .add_systems(PostStartup, setup)
+        //.add_plugins(WorldInspectorPlugin::default())
         .add_systems(
             Update,
             visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(
@@ -26,6 +24,7 @@ fn main() {
             Update,
             visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window),
         )
+        .add_systems(PostStartup, setup)
         .run();
 }
 /// set up a simple 3D scene

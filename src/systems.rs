@@ -442,7 +442,6 @@ pub fn camera_look(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
-    //restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
 ) {
     let window = match primary_window.get_single() {
@@ -508,21 +507,18 @@ pub fn cursor_grab(
 
 /// Grabs/ungrabs mouse cursor
 pub fn toggle_grab_cursor(window: &mut Window, grabbed: &mut ResMut<CursorGrabbed>) {
+    window.cursor.grab_mode = CursorGrabMode::Locked;
+    window.cursor.visible = false;
+    
     match grabbed.0 {
         false => {
             window.cursor.grab_mode = CursorGrabMode::None;
             window.cursor.visible = true;
-            window.cursor.hit_test = true;
-
             grabbed.0 = true;
         }
         true => {
-            //window.set_cursor_position(Some(Vec2::new(0.0, 0.0)));
-
             window.cursor.grab_mode = CursorGrabMode::Locked;
             window.cursor.visible = false;
-            window.cursor.hit_test = false;
-
             grabbed.0 = false;
         }
     }
