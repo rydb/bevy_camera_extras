@@ -405,7 +405,7 @@ pub fn camera_move(
             let right = Vec3::new(local_z.z, 0., -local_z.x);
 
             for key in keys.get_pressed() {
-                match window.cursor.grab_mode {
+                match window.cursor_options.grab_mode {
                     CursorGrabMode::None => (),
                     _ => {
                         let key = *key;
@@ -431,7 +431,7 @@ pub fn camera_move(
                 }
             }
             velocity = velocity.normalize_or_zero();
-            transform.translation += velocity * time.delta_seconds() * settings.speed
+            transform.translation += velocity * time.delta_secs() * settings.speed
         }
     }
 }
@@ -471,7 +471,7 @@ pub fn camera_look(
         if restraints_toggled == false || first_person_look {
             for ev in state.reader_motion.read(&motion) {
                 let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-                match window.cursor.grab_mode {
+                match window.cursor_options.grab_mode {
                     CursorGrabMode::None => (),
                     _ => {
                         // Using smallest of height or width ensures equal vertical and horizontal sensitivity
@@ -507,18 +507,18 @@ pub fn cursor_grab(
 
 /// Grabs/ungrabs mouse cursor
 pub fn toggle_grab_cursor(window: &mut Window, grabbed: &mut ResMut<CursorGrabbed>) {
-    window.cursor.grab_mode = CursorGrabMode::Locked;
-    window.cursor.visible = false;
+    window.cursor_options.grab_mode = CursorGrabMode::Locked;
+    window.cursor_options.visible = false;
     
     match grabbed.0 {
         false => {
-            window.cursor.grab_mode = CursorGrabMode::None;
-            window.cursor.visible = true;
+            window.cursor_options.grab_mode = CursorGrabMode::None;
+            window.cursor_options.visible = true;
             grabbed.0 = true;
         }
         true => {
-            window.cursor.grab_mode = CursorGrabMode::Locked;
-            window.cursor.visible = false;
+            window.cursor_options.grab_mode = CursorGrabMode::Locked;
+            window.cursor_options.visible = false;
             grabbed.0 = false;
         }
     }

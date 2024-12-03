@@ -1,4 +1,4 @@
-use bevy_ecs::{event::ManualEventReader, prelude::*};
+use bevy_ecs::{event::EventCursor, prelude::*};
 use bevy_input::{mouse::MouseMotion, prelude::*};
 use bevy_reflect::Reflect;
 
@@ -72,5 +72,5 @@ impl Default for MovementSettings {
 /// Keeps track of mouse motion events, pitch, and yaw
 #[derive(Resource, Default)]
 pub struct InputState {
-    pub reader_motion: ManualEventReader<MouseMotion>,
+    pub reader_motion: EventCursor<MouseMotion>,
 }
