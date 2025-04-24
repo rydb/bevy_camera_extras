@@ -31,20 +31,20 @@ pub struct POVCamSettings {
     //pub radius: Option<f32>,
     // Rotation in radians around the global Y axis (longitudinal).
     //pub yaw: Option<f32>,
-    // Rotation in radians around the local X axis (latitudinal). 
+    // Rotation in radians around the local X axis (latitudinal).
     //pub pitch: Option<f32>,
-    // The target focus point. 
+    // The target focus point.
     //pub target_focus: Vec3,
     // The target yaw value.
     //pub target_yaw: f32,
-    // The target pitch value. 
+    // The target pitch value.
     //pub target_pitch: f32,
-    // The target radius value. 
+    // The target radius value.
     //pub target_radius: f32,
     // The sensitivity of the orbiting motion.
     // Defaults to `1.0`.
     //pub orbit_sensitivity: f32,
-    // How much smoothing is applied to the orbit motion. 
+    // How much smoothing is applied to the orbit motion.
     // Defaults to `0.8`.
     //pub orbit_smoothness: f32,
     //The sensitivity of moving the camera closer or further way using the scroll wheel.

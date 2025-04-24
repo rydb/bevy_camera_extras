@@ -33,7 +33,6 @@ impl Plugin for CameraExtrasPlugin {
             .insert_resource(self.keybinds_override.unwrap_or_default())
             .insert_resource(self.movement_settings_override.unwrap_or_default())
             .add_systems(PostStartup, set_intial_grab_state)
-
             .add_systems(Update, move_camera_based_on_mode)
             .add_systems(
                 Update,
@@ -42,7 +41,6 @@ impl Plugin for CameraExtrasPlugin {
                     .chain(),
             )
             .add_systems(Update, cursor_grab)
-            .add_systems(Update, check_for_setting_toggles)
-            ;
+            .add_systems(Update, check_for_setting_toggles);
     }
 }

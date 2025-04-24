@@ -40,40 +40,36 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // plane
-    commands.spawn(
-        (
-            Mesh3d(meshes.add(Plane3d::new(
-                Vec3::new(0.0, 1.0, 0.0),
-                Vec2::new(10.0, 10.0),        
-            ))),
-            MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3)))
-        )
-    );
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::new(
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec2::new(10.0, 10.0),
+        ))),
+        MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
+    ));
 
     // player
-    let cube = commands.spawn(
-        (
+    let cube = commands
+        .spawn((
             Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
             MeshMaterial3d(materials.add(Color::srgb(0.8, 0.7, 0.6))),
             Transform::from_xyz(0.0, 0.5, 0.0),
             Name::new("player"),
-        )
-    ).id();
-    
-    // light   
-    commands.spawn(
-        (
-            PointLight {
-                intensity: 1500.0,
-                shadows_enabled: true,
-                ..default()
-            },
-            Transform::from_xyz(0.0, 1.5, 0.0),
-        )
-    );
+        ))
+        .id();
+
+    // light
+    commands.spawn((
+        PointLight {
+            intensity: 1500.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(0.0, 1.5, 0.0),
+    ));
     // camera
-    let cam = commands.spawn(
-        (
+    let cam = commands
+        .spawn((
             Camera3d::default(),
             Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             CameraController {
@@ -84,7 +80,7 @@ fn setup(
                 }),
                 restrained: CameraRestrained(true),
             },
-        )
-    ).id();
+        ))
+        .id();
     commands.entity(cube).insert(ObservedBy(cam));
 }
