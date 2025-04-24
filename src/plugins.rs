@@ -1,5 +1,5 @@
 use bevy_app::prelude::*;
-use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::schedule::IntoScheduleConfigs;
 
 use super::*;
 

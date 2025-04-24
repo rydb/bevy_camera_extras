@@ -385,7 +385,7 @@ pub fn camera_move(
     //restraints_toggled: Res<RestraintsToggled>,
     mut query: Query<(&CameraMode, &mut Transform, Option<&CameraRestrained>), With<Camera>>, //    mut query: Query<&mut Transform, With<FlyCam>>,
 ) {
-    let window = match primary_window.get_single() {
+    let window = match primary_window.single() {
         Ok(win) => win,
         Err(err) => {
             warn!("Unable to move camera, Reason: {:#}", err);
@@ -444,7 +444,7 @@ pub fn camera_look(
     motion: Res<Events<MouseMotion>>,
     mut query: Query<(&mut Transform, &CameraMode, Option<&CameraRestrained>), With<Camera>>,
 ) {
-    let window = match primary_window.get_single() {
+    let window = match primary_window.single() {
         Ok(win) => win,
         Err(err) => {
             warn!("Unable to rotate camera, Reason: {:#}", err);
@@ -496,7 +496,7 @@ pub fn cursor_grab(
     key_bindings: Res<CamKeybinds>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    if let Ok(mut window) = primary_window.get_single_mut() {
+    if let Ok(mut window) = primary_window.single_mut() {
         if keys.just_pressed(key_bindings.toggle_grab_cursor) {
             toggle_grab_cursor(&mut window, &mut grabbed);
         }
@@ -528,7 +528,7 @@ pub fn set_intial_grab_state(
     mut grabbed: ResMut<CursorGrabbed>,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    if let Ok(mut window) = primary_window.get_single_mut() {
+    if let Ok(mut window) = primary_window.single_mut() {
         info!("setting initial grab state");
 
         toggle_grab_cursor(&mut window, &mut grabbed);
