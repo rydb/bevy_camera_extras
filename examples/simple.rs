@@ -2,34 +2,35 @@
 
 use bevy::prelude::*;
 use bevy_camera_extras::*;
+use bevy_ui_extras::{states::DebugMenuState, visualize_components_for, visualize_resource, UiExtrasDebug};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        // .add_plugins(UiExtrasDebug {
-        //     keybinds_override: Some(UiExtrasKeybinds {
-        //         toggle_debug_menu: KeyCode::BracketLeft,
-        //         ..default()
-        //     }),
-        //     open_on_start: false,
-        //     ..default()
-        // })
+        .add_plugins(UiExtrasDebug {
+            keybinds_override: Some(bevy_ui_extras::KeyBinds {
+                toggle_debug_menu: KeyCode::BracketLeft,
+                ..default()
+            }),
+            menu_mode: DebugMenuState::Explain,
+            ..default()
+        })
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
             keybinds_override: None,
             movement_settings_override: None,
         })
         //.add_plugins(WorldInspectorPlugin::default())
-        // .add_systems(
-        //     Update,
-        //     visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(
-        //         bevy_ui_extras::Side::Right,
-        //     )),
-        // )
-        // .add_systems(
-        //     Update,
-        //     visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window),
-        // )
+        .add_systems(
+            Update,
+            visualize_components_for::<CameraMode>(bevy_ui_extras::Display::Side(
+                bevy_ui_extras::Side::Right,
+            )),
+        )
+        .add_systems(
+            Update,
+            visualize_resource::<CamKeybinds>(bevy_ui_extras::Display::Window),
+        )
         .add_systems(PostStartup, setup)
         .run();
 }

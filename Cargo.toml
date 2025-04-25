@@ -24,8 +24,7 @@ glam = "0.29"
 
 [dev-dependencies]
 bevy = { version = "0.16", features = ["dynamic_linking"]}
-# bevy-inspector-egui =  "0.30"
-# egui = "0.30"
-# egui_extras = "0.29"
-# bevy_ui_extras = "0.16.0"
-#bevy-inspector-egui = "0.22.1"
+bevy-inspector-egui =  "0.31"
+egui = "0.31"
+egui_extras = "0.31"
+bevy_ui_extras = "0.20.0"
